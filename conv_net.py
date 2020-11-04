@@ -22,7 +22,7 @@ src = sim.Population(n_input, sim.SpikeSourceArray,
 
 dst = sim.Population(n_out, sim.IF_curr_exp_conv, {})
 
-conn = sim.ConvolutionConnector(shape, shape_out, k_shape)
+conn = sim.ConvolutionConnector(shape, k_shape, strides=stride)
 
 prj = sim.Projection(src, dst, conn)
 
