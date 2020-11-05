@@ -1,5 +1,6 @@
 import numpy as np
 import spynnaker8 as sim
+from pyNN.space import Grid2D
 
 shape = np.array([5, 5], dtype='int32')  # h, w
 n_input = np.prod(shape, dtype='int32')
@@ -20,9 +21,11 @@ sim.setup(timestep=1.)
 src = sim.Population(n_input, sim.SpikeSourceArray,
                      {'spike_times': vline}, label='input spikes')
 
+conn = sim.ConvolutionConnector(shape, k_shape, strides=stride)
+shape_out = conn.get_post_shape()
+n_out = np.prod(shape_out, dtype='int32')
 dst = sim.Population(n_out, sim.IF_curr_exp_conv, {})
 
-conn = sim.ConvolutionConnector(shape, k_shape, strides=stride)
 
 prj = sim.Projection(src, dst, conn)
 
