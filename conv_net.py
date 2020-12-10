@@ -13,8 +13,8 @@ vline = [[10.] if (idx % shape[1]) == (shape[1] // 2) else []
 
 ws = np.zeros(k_shape)
 ws[:, k_shape[1]//2] = np.arange(k_shape[0]) + 2.
-ws[:, :k_shape[1]//2] = -1.
-ws[:, k_shape[1]//2+1:] = -1.
+ws[:, k_shape[1]//2] = -1.
+ws[:, k_shape[1]//2+1:] = 5.
 
 run_time = 50.
 
