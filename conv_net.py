@@ -11,7 +11,8 @@ shape = np.array([5, 5], dtype='int32')  # h, w
 n_input = np.prod(shape, dtype='int32')
 stride = np.array([1, 1], dtype='int32')  # h, w
 k_shape = np.array([3, 3], dtype='int32')
-vline = [[20.+np.random.randint(-2, 3)]
+# vline = [[20.+np.random.randint(-2, 3)]
+vline = [[20.]
          if (idx % shape[1]) == (shape[1] // 2) or idx == 13 else []
          for idx in range(n_input)]
 
@@ -82,7 +83,7 @@ prj = sim.Projection(src, dst, conn)
 
 sim.run(run_time)
 
-neo = dst.get_data('v')
+neo = dst.get_data()
 v = neo.segments[0].filter(name='v')[0]
 spikes = neo.segments[0].spiketrains
 print(v)
@@ -93,6 +94,7 @@ sim.end()
 sum_inputs += post_cfg['v_rest']
 maxv = max(post_cfg['v_thresh']*0.9, np.max(sum_inputs))
 color = ['red', 'blue', 'green', 'orange']
+
 plt.figure()
 plt.axhspan(post_cfg['v_thresh'], maxv, color='gray', alpha=0.3)
 plt.axhline(post_cfg['v_reset'], color='gray', linestyle=':')
@@ -102,6 +104,11 @@ for i, w in enumerate(sum_inputs.flatten()):
 for i, vv in enumerate(v.T):
     plt.plot(vv, color=color[i], label=i)
 
+for i, spks in enumerate(spikes):
+    if len(spks):
+        plt.axvline([float(t) for t in spks], linestyle=':', color=color[i])
+
 plt.legend()
+
 plt.show()
 
