@@ -4,15 +4,16 @@ from pyNN.space import Grid2D
 import cv2
 import matplotlib.pyplot as plt
 
-VISUALIZE = bool(0)
+VISUALIZE = bool(1)
 
 
-def generate_kernels(shape, w):
+def generate_kernels(shape, w=1.0):
     def normalize(k, w):
         # k -= k.mean()
         # k /= k.var()
-        k[k < 0] /= np.sum(k[k < 0])
+        k[k < 0] /= -np.sum(k[k < 0])
         k[k > 0] /= np.sum(k[k > 0])
+        # k /= np.sum(k**2)
         k *= w
 
     def rotate(k, a):
@@ -30,41 +31,45 @@ def generate_kernels(shape, w):
     normalize(h, w)
 
     a45 = rotate(h, 45)
+    normalize(a45, w)
     a135 = rotate(h, 135)
+    normalize(a135, w)
 
     return {'vert': v, 'a45': a45, 'horiz': h, 'a135': a135}
 
 
 img = cv2.imread('./test_img.png', cv2.IMREAD_GRAYSCALE).astype('float')
+pix2rate = 100./255.
 
 if VISUALIZE:
+    img *= pix2rate
     vmax = np.max(np.abs(img))
     vmin = -vmax
     plt.figure()
     im = plt.imshow(img, cmap='PiYG', vmin=vmin, vmax=vmax)
     plt.colorbar(im)
-    plt.show()
+    # plt.show()
 
-pix2rate = 100./255.
+
 
 shape = img.shape
 flat = img.flatten()
 n_input = np.prod(shape, dtype='int32')
-rates = [[pix * pix2rate] for pix in flat]
+rates = [[pix] for pix in flat]
 
-stride = np.array([1, 1], dtype='int32')  # h, w
+stride = np.array([2, 2], dtype='int32')  # h, w
 k_shape = np.array([5, 5], dtype='int32')
-kernels = generate_kernels(k_shape, 1.2)
+kernels = generate_kernels(k_shape, 2.0)
 
 if VISUALIZE:
     plt.figure(figsize=(8, 8))
+    vmax = np.max([np.max(kernels[k]) for k in kernels])
+    vmin = -vmax
     for i, k in enumerate(kernels):
-        vmax = np.max(np.abs(kernels[k]))
-        vmin = -vmax
         ax = plt.subplot(2, 2, i+1)
         im = plt.imshow(kernels[k], cmap='PiYG', label=k, vmin=vmin, vmax=vmax)
         plt.colorbar(im)
-
+    plt.savefig("kernels.png", dpi=300)
     plt.show()
 
 run_time = 50.
@@ -87,6 +92,7 @@ params = {
     'v_rest': 0.,
     'v_reset': 0.,
     'v': 0.,
+    'tau_m': 5.0,
 }
 outputs = {
     k: sim.Population(out_sizes[k], sim.IF_curr_exp_conv,
@@ -112,40 +118,9 @@ neos = {
 neos['input'] = src.get_data()
 sim.end()
 
-# print(neos)
+np.savez_compressed("output_for_conv_filter_demo.npz",
+    neos=neos, pix2rate=pix2rate, shape=shape,
+    flat=flat, n_input=n_input, rates=rates,
+    stride=stride, k_shape=k_shape, kernels=kernels,
+    run_time=run_time, out_shapes=out_shapes)
 
-dt = 3.
-locs = {'horiz': 1, 'vert': 3, 'input': 5, 'a135': 7,  'a45': 9}
-for ts in np.arange(0, run_time, dt):
-    te = ts + dt
-    print(ts, te)
-    fig = plt.figure(figsize=(10, 10))
-    for i, k in enumerate(neos):
-        s = neos[k].segments[0].spiketrains
-        shp = shape if k == 'input' else out_shapes[k]
-        out_img = np.zeros(shp)
-        w = shp[1]
-        for nid, trains in enumerate(s):
-            whr = np.where(
-                    np.logical_and(ts <= trains, trains < te))
-            if len(whr[0]):
-                out_img[nid // w, nid % w] = 1.
-
-        plt.suptitle('[{} to {})'.format(ts, te))
-        ax = plt.subplot(3, 3, locs[k])
-        im = plt.imshow(out_img)
-        plt.colorbar(im)
-        ax.set_title("filter {}".format(k))
-
-    plt.savefig("sim_output_{:010d}.png".format(int(ts)), dpi=300)
-    plt.close(fig)
-    # plt.show()
-
-# plt.show()
-
-# for i, vv in enumerate(v.T):
-#     plt.plot(vv, label=i)
-# plt.legend()
-# plt.show()
-#
-print("end")
