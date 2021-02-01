@@ -4,7 +4,7 @@ from pyNN.space import Grid2D
 import cv2
 import matplotlib.pyplot as plt
 
-VISUALIZE = bool(1)
+VISUALIZE = bool(0)
 
 
 def generate_kernels(shape, w=1.0):
@@ -37,12 +37,13 @@ def generate_kernels(shape, w=1.0):
 
     return {'vert': v, 'a45': a45, 'horiz': h, 'a135': a135}
 
-
-img = cv2.imread('./test_img.png', cv2.IMREAD_GRAYSCALE).astype('float')
+img_name = 'test_img'
+img_name = 'test_pulse'
+img = cv2.imread('./{}.png'.format(img_name), cv2.IMREAD_GRAYSCALE).astype('float')
 pix2rate = 100./255.
+img *= pix2rate
 
 if VISUALIZE:
-    img *= pix2rate
     vmax = np.max(np.abs(img))
     vmin = -vmax
     plt.figure()
@@ -50,16 +51,14 @@ if VISUALIZE:
     plt.colorbar(im)
     # plt.show()
 
-
-
 shape = img.shape
 flat = img.flatten()
-n_input = np.prod(shape, dtype='int32')
+n_input = int(np.prod(shape))
 rates = [[pix] for pix in flat]
 
-stride = np.array([2, 2], dtype='int32')  # h, w
+stride = np.array([1, 1], dtype='int32')  # h, w
 k_shape = np.array([5, 5], dtype='int32')
-kernels = generate_kernels(k_shape, 2.0)
+kernels = generate_kernels(k_shape, 1.5)
 
 if VISUALIZE:
     plt.figure(figsize=(8, 8))
@@ -72,7 +71,7 @@ if VISUALIZE:
     plt.savefig("kernels.png", dpi=300)
     plt.show()
 
-run_time = 50.
+run_time = 100.
 
 sim.setup(timestep=1.)
 
@@ -85,7 +84,7 @@ conns = {k: sim.ConvolutionConnector(shape, kernels[k], strides=stride)
 
 
 out_shapes = {k: conns[k].get_post_shape() for k in conns}
-out_sizes = {k: np.prod(out_shapes[k], dtype='int32') for k in out_shapes}
+out_sizes = {k: int(np.prod(out_shapes[k])) for k in out_shapes}
 
 params = {
     'v_thresh': 1.,
@@ -119,6 +118,7 @@ neos['input'] = src.get_data()
 sim.end()
 
 np.savez_compressed("output_for_conv_filter_demo.npz",
+    input_name=img_name,
     neos=neos, pix2rate=pix2rate, shape=shape,
     flat=flat, n_input=n_input, rates=rates,
     stride=stride, k_shape=k_shape, kernels=kernels,

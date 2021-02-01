@@ -129,4 +129,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-sim_output_*.png
+*sim_output_*.png
+*kernels*.png
+*raster_conv_filter_demo.png
+*mp4
+output_*.npz
