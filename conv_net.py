@@ -7,13 +7,18 @@ np.random.seed(13)
 
 sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=11)
 
-shape = np.array([5, 5], dtype='int32')  # h, w
+shape = np.array([7, 7], dtype='int32')  # h, w
 n_input = np.prod(shape, dtype='int32')
 stride = np.array([1, 1], dtype='int32')  # h, w
 k_shape = np.array([3, 3], dtype='int32')
 # vline = [[20.+np.random.randint(-2, 3)]
+# vline = [[20.]
+#          if (idx % shape[1]) == (shape[1] // 2) or idx == 13 else []
+#          for idx in range(n_input)]
 vline = [[20.]
-         if (idx % shape[1]) == (shape[1] // 2) or idx == 13 else []
+         if ((idx % shape[1]) == (shape[1] // 2) and
+             (idx % shape[0]) == (shape[0] // 2))
+         else []
          for idx in range(n_input)]
 
 
@@ -99,14 +104,14 @@ plt.figure()
 plt.axhspan(post_cfg['v_thresh'], maxv, color='gray', alpha=0.3)
 plt.axhline(post_cfg['v_reset'], color='gray', linestyle=':')
 for i, w in enumerate(sum_inputs.flatten()):
-    plt.axhline(w, color=color[i], linestyle='--')
+    plt.axhline(w, linestyle='--')#, color=color[i])
 
 for i, vv in enumerate(v.T):
-    plt.plot(vv, color=color[i], label=i)
+    plt.plot(vv, label=i)#, color=color[i])
 
 for i, spks in enumerate(spikes):
     if len(spks):
-        plt.axvline([float(t) for t in spks], linestyle=':', color=color[i])
+        plt.axvline([float(t) for t in spks], linestyle=':')#, color=color[i])
 
 plt.legend()
 
