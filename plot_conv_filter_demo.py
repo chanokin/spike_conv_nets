@@ -19,6 +19,7 @@ name = data['input_name']
 dt = 1.
 locs = {'horiz': (1, 2), 'vert': (1, 3), 'input': 5,
         'a135': (2, 2),  'a45': (2, 3)}
+char = {'horiz': '_', 'vert': '|', 'a135': '$\\backslash$',  'a45': '$/$'}
 chan = {'horiz': [0], 'vert': [1], 'a135': [1, 2],  'a45': [0, 1]}
 wchan = {'horiz': [1.], 'vert': [1.], 'a135': [1., 1.],  'a45': [1., 0.5]}
 colors = {'input': 'gray', 'horiz': 'red', 'vert': 'blue',
@@ -44,7 +45,7 @@ for i, k in enumerate(neos):
                  markersize=5., color=colors[k])
 
 plt.savefig("{}_raster_conv_filter_demo.png".format(name), dpi=300)
-plt.show()
+# plt.show()
 # import sys
 # sys.exit(0)
 
@@ -65,7 +66,7 @@ fade = 0.1
 cmap = 'hot'
 # cmap = 'seismic_r'
 for tidx, ts in enumerate(np.arange(0, run_time, dt)):
-    in_img *= 0.
+    in_img *= fade
     for k in out_imgs:
         out_imgs[k] *= 0.
 
@@ -77,6 +78,11 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
     heights = [1, 1]
     spec = fig.add_gridspec(ncols=3, nrows=2, width_ratios=widths,
                             height_ratios=heights)
+    axes = {
+        'input': spec[:, 0], 'horiz': spec[0, 1],
+        'vert': spec[0, 2],  'a45': spec[1, 2],
+        'a135': spec[1, 1],
+    }
     for i, k in enumerate(neos):
         s = neos[k].segments[0].spiketrains
         if k != 'input':
@@ -93,6 +99,14 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
                     r, c = nid // w, nid % w
                     in_img[r, c] = min(1., in_img[r, c] + 1.)
 
+            ax = fig.add_subplot(axes[k])
+            im = plt.imshow(in_img, cmap="Greys_r")
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.set_title(k)
+            pos = ax.get_position()
+            pos.x0 *= 0.1
+            ax.set_position(pos)
 
         else:
             w = shp[1]
@@ -100,22 +114,46 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
             vs = voltages[vidx]
             for nid, v in enumerate(vs):
                 row, col = nid // w, nid % w
+                # print(k, nid, row, col)
                 [padr, padc] = k_shape // 2
-                row = max(0, row * stride[0] + padr)
-                col = max(0, col * stride[1] + padc)
+                # padr, padc = 0, 0
+                row = row * stride[0] + padr
+                col = col * stride[1] + padc
+                # print(row, col)
 
                 out_imgs[k][row, col] += float(v)
 
-            # for nid, times in enumerate(s):
-            #     tss = ts + dt
-            #     tee = te + dt
-            #     whr = np.where(
-            #             np.logical_and(tss <= times, times < tee))
-            #     if len(whr[0]):
-            #         row, col = nid // w, nid % w
-            #         [padr, padc] = k_shape // 2
-            #         row = row * stride[0] + padr
-            #         col = col * stride[1] + padc
+            ax = fig.add_subplot(axes[k])
+            pos = ax.get_position()
+            pos.x0 *= 0.95
+            ax.set_position(pos)
+            im = plt.imshow(out_imgs[k], cmap=cmap, vmin=vmin, vmax=vmax, alpha=0.25)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.set_title(k)
+            if k in ['vert', 'a45']:
+                axins = inset_axes(ax,
+                                   width="5%",  # width = 5% of parent_bbox width
+                                   height="100%",  # height : 50%
+                                   loc='lower left',
+                                   bbox_to_anchor=(1.0, 0., 1, 1),
+                                   bbox_transform=ax.transAxes,
+                                   borderpad=0,
+                                   )
+                fig.colorbar(im, cax=axins)
+
+            for nid, times in enumerate(s):
+                tss = ts + dt
+                tee = te + dt
+                whr = np.where(
+                        np.logical_and(tss <= times, times < tee))
+                if len(whr[0]):
+                    row, col = nid // w, nid % w
+                    [padr, padc] = k_shape // 2
+                    row = row * stride[0] + padr
+                    col = col * stride[1] + padc
+                    ax.plot(col, row, marker=char[k], markersize=10.,
+                            markeredgewidth=2., color='blue')
             #         for wc, c in zip(wchan[k], chan[k]):
             #             # out_img[row, col, c] += 0.25
             #             out_imgs[k][row, col, c] = min(
@@ -123,93 +161,6 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
 
 
     plt.suptitle('[{} to {})'.format(ts, te))
-
-    ax = fig.add_subplot(spec[:, 0])
-    im = plt.imshow(in_img, cmap="Greys_r")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.set_title("input")
-    pos = ax.get_position()
-    pos.x0 *= 0.1
-    ax.set_position(pos)
-
-    k = 'horiz'
-    ax = fig.add_subplot(spec[0, 1])
-    pos = ax.get_position()
-    pos.x0 *= 0.95
-    ax.set_position(pos)
-    im = plt.imshow(out_imgs[k], cmap=cmap, vmin=vmin, vmax=vmax)
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.set_title(k)
-    # axins = inset_axes(ax,
-    #                    width="1%",  # width = 5% of parent_bbox width
-    #                    height="100%",  # height : 50%
-    #                    loc='lower left',
-    #                    bbox_to_anchor=(1.05, 0., 1, 1),
-    #                    bbox_transform=ax.transAxes,
-    #                    borderpad=0,
-    #                    )
-    # fig.colorbar(im, cax=axins)
-
-    k = 'vert'
-    ax = fig.add_subplot(spec[0, 2])
-    pos = ax.get_position()
-    pos.x0 *= 0.95
-    ax.set_position(pos)
-    im = plt.imshow(out_imgs[k], cmap=cmap, vmin=vmin, vmax=vmax)
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.set_title(k)
-    axins = inset_axes(ax,
-                       width="5%",  # width = 5% of parent_bbox width
-                       height="100%",  # height : 50%
-                       loc='lower left',
-                       bbox_to_anchor=(1.0, 0., 1, 1),
-                       bbox_transform=ax.transAxes,
-                       borderpad=0,
-                       )
-    fig.colorbar(im, cax=axins)
-
-    k = 'a45'
-    ax = fig.add_subplot(spec[1, 2])
-    pos = ax.get_position()
-    pos.x0 *= 0.95
-    ax.set_position(pos)
-
-    im = plt.imshow(out_imgs[k], cmap=cmap, vmin=vmin, vmax=vmax)
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.set_title(k)
-    axins = inset_axes(ax,
-                       width="5%",  # width = 5% of parent_bbox width
-                       height="100%",  # height : 50%
-                       loc='lower left',
-                       bbox_to_anchor=(1.0, 0., 1, 1),
-                       bbox_transform=ax.transAxes,
-                       borderpad=0,
-                       )
-    fig.colorbar(im, cax=axins)
-
-    k = 'a135'
-    ax = fig.add_subplot(spec[1, 1])
-    pos = ax.get_position()
-    pos.x0 *= 0.95
-    ax.set_position(pos)
-
-    im = plt.imshow(out_imgs[k], cmap=cmap, vmin=vmin, vmax=vmax)
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.set_title(k)
-    # axins = inset_axes(ax,
-    #                    width="1%",  # width = 5% of parent_bbox width
-    #                    height="100%",  # height : 50%
-    #                    loc='lower left',
-    #                    bbox_to_anchor=(1.05, 0., 1, 1),
-    #                    bbox_transform=ax.transAxes,
-    #                    borderpad=0,
-    #                    )
-    # fig.colorbar(im, cax=axins)
 
     # plt.show()
     # plt.tight_layout()

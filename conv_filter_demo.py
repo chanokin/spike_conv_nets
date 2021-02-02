@@ -38,9 +38,9 @@ def generate_kernels(shape, w=1.0):
     return {'vert': v, 'a45': a45, 'horiz': h, 'a135': a135}
 
 img_name = 'test_img'
-img_name = 'test_pulse'
+# img_name = 'test_pulse'
 img = cv2.imread('./{}.png'.format(img_name), cv2.IMREAD_GRAYSCALE).astype('float')
-pix2rate = 100./255.
+pix2rate = 500./255.
 img *= pix2rate
 
 if VISUALIZE:
@@ -75,8 +75,17 @@ run_time = 100.
 
 sim.setup(timestep=1.)
 
-src = sim.Population(n_input, sim.SpikeSourcePoisson,
-                     {'rate': rates}, label='input spikes')
+if bool(0):
+    spike_idx = [0, (n_input + shape[1])//2, shape[1] - 1, n_input - shape[1], n_input - 1]
+    spike_times = [[] for idx in range(n_input)]
+    for i, sidx in enumerate(spike_idx):
+        spike_times[sidx] = [2*i + 1]
+
+    src = sim.Population(n_input, sim.SpikeSourceArray,
+                         {'spike_times': spike_times}, label='input spikes')
+else:
+    src = sim.Population(n_input, sim.SpikeSourcePoisson,
+                         {'rate': rates}, label='input spikes')
 src.record('spikes')
 
 conns = {k: sim.ConvolutionConnector(shape, kernels[k], strides=stride)
@@ -91,7 +100,7 @@ params = {
     'v_rest': 0.,
     'v_reset': 0.,
     'v': 0.,
-    'tau_m': 5.0,
+    'tau_m': 1.0,
 }
 outputs = {
     k: sim.Population(out_sizes[k], sim.IF_curr_exp_conv,
@@ -123,4 +132,6 @@ np.savez_compressed("output_for_conv_filter_demo.npz",
     flat=flat, n_input=n_input, rates=rates,
     stride=stride, k_shape=k_shape, kernels=kernels,
     run_time=run_time, out_shapes=out_shapes)
+
+# import plot_conv_filter_demo
 
