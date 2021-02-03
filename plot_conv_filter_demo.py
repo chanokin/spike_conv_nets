@@ -2,7 +2,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.gridspec as gs
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from mpl_axes_aligner import shift
 
 data = np.load("output_for_conv_filter_demo.npz",
                allow_pickle=True)
@@ -65,7 +64,7 @@ vmin = -vmax
 # vmax = None
 in_img = np.zeros(shape)
 out_imgs = {k: np.zeros((shape[0], shape[1])) for k in out_shapes}
-fade = 0.2
+fade = 0.3
 cmap = 'hot'
 # cmap = 'seismic_r'
 for tidx, ts in enumerate(np.arange(0, run_time, dt)):
@@ -139,7 +138,8 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
             # ax.set_position([pos.x0, pos.y0,
             #                  pos.width, pos.height])
 
-            im = ax.imshow(out_imgs[k], cmap=cmap, vmin=vmin, vmax=vmax, alpha=0.25)
+            im = ax.imshow(out_imgs[k], cmap=cmap, vmin=vmin, vmax=vmax,
+                           alpha=0.4)
             ax.set_xticks([])
             ax.set_yticks([])
             ax.set_title(k)
@@ -166,8 +166,12 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
                     col = col * stride[1] + padc
                     print(k, row, col, ts, te, tidx)
                     ax.plot(col, row, marker="*",#char[k],
-                            markersize=20.,
-                            markeredgewidth=3., color='black')
+                            markersize=30.,
+                            markeredgewidth=1.,
+                            markerfacecolor='black',
+                            markeredgecolor='magenta',
+                            # color='black'
+                            )
 
 
 
