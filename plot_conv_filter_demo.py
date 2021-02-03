@@ -2,6 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.gridspec as gs
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from mpl_axes_aligner import shift
 
 data = np.load("output_for_conv_filter_demo.npz",
                allow_pickle=True)
@@ -60,9 +61,11 @@ vmin = np.max([np.min(neos[k].segments[0].filter(name='v')[0])
 vmax = np.max(np.abs([vmin, vmax]))
 # vmax = 1.0
 vmin = -vmax
+# vmin = None
+# vmax = None
 in_img = np.zeros(shape)
 out_imgs = {k: np.zeros((shape[0], shape[1])) for k in out_shapes}
-fade = 0.1
+fade = 0.2
 cmap = 'hot'
 # cmap = 'seismic_r'
 for tidx, ts in enumerate(np.arange(0, run_time, dt)):
@@ -72,13 +75,14 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
 
     te = ts + dt
     print(ts, te)
-    fig = plt.figure(constrained_layout=True)
+    fig = plt.figure(figsize=(20, 10))#, constrained_layout=True)
     # fig = plt.figure(figsize=(20, 10))
+    fig.suptitle('[{} to {})'.format(ts, te))
     widths = [2, 1, 1]
     heights = [1, 1]
     spec = fig.add_gridspec(ncols=3, nrows=2, width_ratios=widths,
                             height_ratios=heights)
-    axes = {
+    locations = {
         'input': spec[:, 0], 'horiz': spec[0, 1],
         'vert': spec[0, 2],  'a45': spec[1, 2],
         'a135': spec[1, 1],
@@ -99,14 +103,19 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
                     r, c = nid // w, nid % w
                     in_img[r, c] = min(1., in_img[r, c] + 1.)
 
-            ax = fig.add_subplot(axes[k])
-            im = plt.imshow(in_img, cmap="Greys_r")
+            ax = fig.add_subplot(locations[k])
+            # pos = ax.get_position()
+            # dx = pos.x0 - pos.x0 * 0.5
+            # pos.x0 -= dx
+            # ax.set_position([pos.x0, pos.y0,
+            #                  pos.width, pos.height])
+
+            im = ax.imshow(in_img, cmap="Greys_r")
             ax.set_xticks([])
             ax.set_yticks([])
             ax.set_title(k)
-            pos = ax.get_position()
-            pos.x0 *= 0.1
-            ax.set_position(pos)
+
+
 
         else:
             w = shp[1]
@@ -121,13 +130,16 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
                 col = col * stride[1] + padc
                 # print(row, col)
 
-                out_imgs[k][row, col] += float(v)
+                out_imgs[k][row, col] = float(v)
 
-            ax = fig.add_subplot(axes[k])
+            ax = fig.add_subplot(locations[k])
             pos = ax.get_position()
-            pos.x0 *= 0.95
-            ax.set_position(pos)
-            im = plt.imshow(out_imgs[k], cmap=cmap, vmin=vmin, vmax=vmax, alpha=0.25)
+            # dx = pos.x0 - pos.x0 * 0.95
+            # pos.x0 -= dx
+            # ax.set_position([pos.x0, pos.y0,
+            #                  pos.width, pos.height])
+
+            im = ax.imshow(out_imgs[k], cmap=cmap, vmin=vmin, vmax=vmax, alpha=0.25)
             ax.set_xticks([])
             ax.set_yticks([])
             ax.set_title(k)
@@ -152,18 +164,17 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
                     [padr, padc] = k_shape // 2
                     row = row * stride[0] + padr
                     col = col * stride[1] + padc
-                    ax.plot(col, row, marker=char[k], markersize=10.,
-                            markeredgewidth=2., color='blue')
-            #         for wc, c in zip(wchan[k], chan[k]):
-            #             # out_img[row, col, c] += 0.25
-            #             out_imgs[k][row, col, c] = min(
-            #                                     1., out_imgs[k][row, col, c] + wc)
+                    print(k, row, col, ts, te, tidx)
+                    ax.plot(col, row, marker="*",#char[k],
+                            markersize=20.,
+                            markeredgewidth=3., color='black')
 
 
-    plt.suptitle('[{} to {})'.format(ts, te))
 
-    # plt.show()
-    # plt.tight_layout()
+
+    # fig.show()
+
+    # fig.tight_layout()
     fig.savefig("{}_sim_output_{:010d}.png".format(name, int(ts)), dpi=300)
     plt.close(fig)
 
