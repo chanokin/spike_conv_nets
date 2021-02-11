@@ -60,15 +60,16 @@ stride = np.array([1, 1], dtype='int32')  # h, w
 k_shape = np.array([5, 5], dtype='int32')
 kernels = generate_kernels(k_shape, 1.5)
 
+
+plt.figure(figsize=(8, 8))
+vmax = np.max([np.max(kernels[k]) for k in kernels])
+vmin = -vmax
+for i, k in enumerate(kernels):
+    ax = plt.subplot(2, 2, i+1)
+    im = plt.imshow(kernels[k], cmap='PiYG', label=k, vmin=vmin, vmax=vmax)
+    plt.colorbar(im)
+plt.savefig("kernels.png", dpi=300)
 if VISUALIZE:
-    plt.figure(figsize=(8, 8))
-    vmax = np.max([np.max(kernels[k]) for k in kernels])
-    vmin = -vmax
-    for i, k in enumerate(kernels):
-        ax = plt.subplot(2, 2, i+1)
-        im = plt.imshow(kernels[k], cmap='PiYG', label=k, vmin=vmin, vmax=vmax)
-        plt.colorbar(im)
-    plt.savefig("kernels.png", dpi=300)
     plt.show()
 
 run_time = 100.
