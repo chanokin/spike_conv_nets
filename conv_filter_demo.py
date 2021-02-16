@@ -91,6 +91,10 @@ src.record('spikes')
 conns = {k: sim.ConvolutionConnector(shape, kernels[k], strides=stride)
          for k in kernels}
 
+as_post = {k: {r: {c: conns[k].pre_as_post(r, c)
+                      for c in range(shape[1])}
+               for r in range(shape[0])}
+           for k in conns}
 
 out_shapes = {k: conns[k].get_post_shape() for k in conns}
 out_sizes = {k: int(np.prod(out_shapes[k])) for k in out_shapes}
@@ -131,7 +135,9 @@ np.savez_compressed("output_for_conv_filter_demo.npz",
     neos=neos, pix2rate=pix2rate, shape=shape,
     flat=flat, n_input=n_input, rates=rates,
     stride=stride, k_shape=k_shape, kernels=kernels,
-    run_time=run_time, out_shapes=out_shapes)
+    run_time=run_time, out_shapes=out_shapes,
+    as_post=as_post
+)
 
 # import plot_conv_filter_demo
 

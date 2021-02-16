@@ -13,6 +13,7 @@ out_shapes = data['out_shapes'].item()
 k_shape = data['k_shape']
 stride = data['stride']
 name = data['input_name']
+as_post = data['as_post'].item()
 
 # print(neos)
 
@@ -122,12 +123,8 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
             vs = voltages[vidx]
             for nid, v in enumerate(vs):
                 row, col = nid // w, nid % w
-                # print(k, nid, row, col)
-                [padr, padc] = k_shape // 2
-                # padr, padc = 0, 0
-                row = row * stride[0] + padr
-                col = col * stride[1] + padc
-                # print(row, col)
+
+                row, col = as_post[k][row][col] + 1
 
                 out_imgs[k][row, col] = float(v)
 
@@ -165,11 +162,11 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
                     row = row * stride[0] + padr
                     col = col * stride[1] + padc
                     print(k, row, col, ts, te, tidx)
-                    ax.plot(col, row, marker="*",#char[k],
-                            markersize=30.,
-                            markeredgewidth=1.,
-                            markerfacecolor='black',
-                            markeredgecolor='magenta',
+                    ax.plot(col, row, marker="^",#char[k],
+                            markersize=20.,
+                            markeredgewidth=5.,
+                            markerfacecolor='green',
+                            markeredgecolor='red',
                             # color='black'
                             )
 
