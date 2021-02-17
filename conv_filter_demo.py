@@ -39,7 +39,17 @@ def generate_kernels(shape, w=1.0):
 
 img_name = 'test_img'
 # img_name = 'test_pulse'
-img = cv2.imread('./{}.png'.format(img_name), cv2.IMREAD_GRAYSCALE).astype('float')
+img = cv2.imread('./{}.png'.format(img_name),
+                 cv2.IMREAD_GRAYSCALE).astype('float')
+
+##################################################
+###             N E W    S H A P E             ###
+##################################################
+new_shape = (np.asarray(img.shape)*1.7).astype('int')
+
+img = cv2.resize(img, tuple(new_shape))
+
+
 pix2rate = 500./255.
 img *= pix2rate
 
@@ -61,18 +71,21 @@ k_shape = np.array([5, 5], dtype='int32')
 kernels = generate_kernels(k_shape, 1.5)
 
 
-plt.figure(figsize=(8, 8))
-vmax = np.max([np.max(kernels[k]) for k in kernels])
-vmin = -vmax
-for i, k in enumerate(kernels):
-    ax = plt.subplot(2, 2, i+1)
-    im = plt.imshow(kernels[k], cmap='PiYG', label=k, vmin=vmin, vmax=vmax)
-    plt.colorbar(im)
-plt.savefig("kernels.png", dpi=300)
-if VISUALIZE:
-    plt.show()
+# plt.figure(figsize=(8, 8))
+# vmax = np.max([np.max(kernels[k]) for k in kernels])
+# vmin = -vmax
+# for i, k in enumerate(kernels):
+#     ax = plt.subplot(2, 2, i+1)
+#     im = plt.imshow(kernels[k], cmap='PiYG', label=k, vmin=vmin, vmax=vmax)
+#     plt.colorbar(im)
+# plt.savefig("kernels.png", dpi=300)
+# if VISUALIZE:
+#     plt.show()
 
-run_time = 100.
+sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
+# sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=1024)
+
+run_time = 10.#0.
 
 sim.setup(timestep=1.)
 
@@ -87,7 +100,7 @@ if bool(0):
 else:
     src = sim.Population(n_input, sim.SpikeSourcePoisson,
                          {'rate': rates}, label='input spikes')
-src.record('spikes')
+# src.record('spikes')
 
 conns = {k: sim.ConvolutionConnector(shape, kernels[k], strides=stride)
          for k in kernels}
@@ -112,8 +125,8 @@ outputs = {
                       params, label="out_{}".format(k))
     for k in out_shapes
 }
-for k in outputs:
-    outputs[k].record(['v', 'spikes'])
+# for k in outputs:
+#     outputs[k].record(['v', 'spikes'])
 # syn = sim.StaticSynapse(weight=ws.flatten)
 
 
