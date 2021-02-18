@@ -8,18 +8,18 @@ np.random.seed(13)
 sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=11)
 
 shape = np.array([7, 7], dtype='int32')  # h, w
-n_input = np.prod(shape, dtype='int32')
+n_input = int(np.prod(shape, dtype='int32'))
 stride = np.array([1, 1], dtype='int32')  # h, w
 k_shape = np.array([3, 3], dtype='int32')
 # vline = [[20.+np.random.randint(-2, 3)]
-# vline = [[20.]
-#          if (idx % shape[1]) == (shape[1] // 2) or idx == 13 else []
-#          for idx in range(n_input)]
-vline = [[20.]
-         if ((idx % shape[1]) == (shape[1] // 2) and
-             (idx % shape[0]) == (shape[0] // 2))
-         else []
+vline = [[20. + idx // shape[1]]
+         if (idx % shape[1]) == (shape[1] // 2) or idx == 13 else []
          for idx in range(n_input)]
+# vline = [[20. + idx]
+#          if ((idx % shape[1]) == (shape[1] // 2) and
+#              (idx % shape[0]) == (shape[0] // 2))
+#          else []
+#          for idx in range(n_input)]
 
 
 wmax = 5.0
@@ -40,7 +40,7 @@ print(np.sum(ws))
 
 
 
-run_time = 50.
+run_time = 60.
 
 sim.setup(timestep=1.)
 
@@ -72,7 +72,7 @@ for i, x in enumerate(vline):
 
 print(sum_inputs)
 
-n_out = np.prod(shape_out, dtype='int32')
+n_out = int(np.prod(shape_out, dtype='int32'))
 post_cfg = {
     'v_thresh': -60.0,
     'v_reset': -80.0,

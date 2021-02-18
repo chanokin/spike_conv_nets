@@ -35,22 +35,15 @@ def generate_kernels(shape, w=1.0):
     a135 = rotate(h, 135)
     normalize(a135, w)
 
-    return {'vert': v, }#'a45': a45, 'horiz': h, 'a135': a135}
+    return {'vert': v,}# 'a45': a45, 'horiz': h, 'a135': a135}
 
 img_name = 'test_img'
 # img_name = 'test_pulse'
 img = cv2.imread('./{}.png'.format(img_name),
                  cv2.IMREAD_GRAYSCALE).astype('float')
-
-##################################################
-###             N E W    S H A P E             ###
-##################################################
-new_shape = (np.asarray(img.shape) * 1.6).astype('int')
-
-img = cv2.resize(img, tuple(new_shape))
-
-
-pix2rate = 500./255.
+img = cv2.resize(img, dsize=tuple(np.asarray(img.shape)*2))
+print(img.shape)
+pix2rate = 5./255.
 img *= pix2rate
 
 if VISUALIZE:
@@ -66,25 +59,26 @@ flat = img.flatten()
 n_input = int(np.prod(shape))
 rates = [[pix] for pix in flat]
 
+pool = bool(1)
+pool_area = 2 if pool else None
+pool_stride = 2 if pool else None
 stride = np.array([1, 1], dtype='int32')  # h, w
 k_shape = np.array([5, 5], dtype='int32')
 kernels = generate_kernels(k_shape, 1.5)
 
+if VISUALIZE:
+    plt.figure(figsize=(8, 8))
+    vmax = np.max([np.max(kernels[k]) for k in kernels])
+    vmin = -vmax
+    for i, k in enumerate(kernels):
+        ax = plt.subplot(2, 2, i+1)
+        im = plt.imshow(kernels[k], cmap='PiYG', label=k, vmin=vmin, vmax=vmax)
+        plt.colorbar(im)
+    plt.savefig("kernels.png", dpi=300)
+    plt.show()
 
-# plt.figure(figsize=(8, 8))
-# vmax = np.max([np.max(kernels[k]) for k in kernels])
-# vmin = -vmax
-# for i, k in enumerate(kernels):
-#     ax = plt.subplot(2, 2, i+1)
-#     im = plt.imshow(kernels[k], cmap='PiYG', label=k, vmin=vmin, vmax=vmax)
-#     plt.colorbar(im)
-# plt.savefig("kernels.png", dpi=300)
-# if VISUALIZE:
-#     plt.show()
-
-sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
-# sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=1024)
-# sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=100)
+sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=100)
+# sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=100)
 
 run_time = 100.
 
@@ -103,7 +97,9 @@ else:
                          {'rate': rates}, label='input spikes')
 # src.record('spikes')
 
-conns = {k: sim.ConvolutionConnector(shape, kernels[k], strides=stride)
+conns = {k: sim.ConvolutionConnector(
+                                shape, kernels[k], strides=stride,
+                                pooling=pool_area, pool_stride=pool_stride)
          for k in kernels}
 
 as_post = {k: {r: {c: conns[k].pre_as_post(r, c)
@@ -126,8 +122,8 @@ outputs = {
                       params, label="out_{}".format(k))
     for k in out_shapes
 }
-# for k in outputs:
-#     outputs[k].record(['v', 'spikes'])
+for k in outputs:
+    outputs[k].record(['v', 'spikes'])
 # syn = sim.StaticSynapse(weight=ws.flatten)
 
 
@@ -151,8 +147,7 @@ np.savez_compressed("output_for_conv_filter_demo.npz",
     flat=flat, n_input=n_input, rates=rates,
     stride=stride, k_shape=k_shape, kernels=kernels,
     run_time=run_time, out_shapes=out_shapes,
-    as_post=as_post
-)
+    as_post=as_post)
 
 # import plot_conv_filter_demo
 
