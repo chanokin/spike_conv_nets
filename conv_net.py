@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 np.random.seed(13)
 
-sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=25)
+sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=250)
 
 shape = np.array([7, 7], dtype='int32')  # h, w
 n_input = int(np.prod(shape, dtype='int32'))
