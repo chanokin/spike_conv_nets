@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 np.random.seed(13)
 
-sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=11)
+sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=25)
 
 shape = np.array([7, 7], dtype='int32')  # h, w
 n_input = int(np.prod(shape, dtype='int32'))
@@ -110,8 +110,8 @@ for i, vv in enumerate(v.T):
     plt.plot(vv, label=i)#, color=color[i])
 
 for i, spks in enumerate(spikes):
-    if len(spks):
-        plt.axvline([float(t) for t in spks], linestyle=':')#, color=color[i])
+    for t in spks:
+        plt.axvline(float(t), linestyle=':')#, color=color[i])
 
 plt.legend()
 
