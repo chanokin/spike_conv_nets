@@ -38,8 +38,8 @@ def generate_kernels(shape, w=1.0):
     return {
         'vert': v,
         'a45': a45,
-        # 'horiz': h,
-        # 'a135': a135
+        'horiz': h,
+        'a135': a135
     }
 
 img_name = 'test_img'
@@ -50,7 +50,7 @@ img = cv2.imread('./{}.png'.format(img_name),
 ##################################################
 ###             N E W    S H A P E             ###
 ##################################################
-new_shape = (np.asarray(img.shape) * 0.5).astype('int')
+new_shape = (np.asarray(img.shape) * 1.).astype('int')
 
 img = cv2.resize(img, tuple(new_shape))
 
@@ -75,7 +75,9 @@ stride = np.array([1, 1], dtype='int32')  # h, w
 k_shape = np.array([5, 5], dtype='int32')
 kernels = generate_kernels(k_shape, 1.5)
 
-
+for k in kernels:
+    print(k)
+    print(kernels[k])
 # plt.figure(figsize=(8, 8))
 # vmax = np.max([np.max(kernels[k]) for k in kernels])
 # vmin = -vmax
@@ -89,9 +91,9 @@ kernels = generate_kernels(k_shape, 1.5)
 
 sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=1024)
-sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=25)
+# sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=25)
 
-run_time = 100.
+run_time = 10.
 
 sim.setup(timestep=1.)
 
@@ -106,7 +108,6 @@ if bool(0):
 else:
     src = sim.Population(n_input, sim.SpikeSourcePoisson,
                          {'rate': rates}, label='input spikes')
-src.record('spikes')
 
 conns = {k: sim.ConvolutionConnector(shape, kernels[k], strides=stride)
          for k in kernels}
@@ -131,6 +132,8 @@ outputs = {
                       params, label="out_{}".format(k))
     for k in out_shapes
 }
+
+src.record('spikes')
 for k in outputs:
     outputs[k].record(['v', 'spikes'])
 # syn = sim.StaticSynapse(weight=ws.flatten)
