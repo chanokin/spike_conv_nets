@@ -51,7 +51,8 @@ plt.savefig("{}_raster_conv_filter_demo.png".format(name), dpi=300)
 # sys.exit(0)
 
 # neo.segments[0].filter(name='v')[0]
-
+k = 'a45'
+v = neos[k].segments[0].filter(name='v')
 ### IMAGE VERSION
 vmax = np.max([np.max(neos[k].segments[0].filter(name='v')[0])
                for k in neos if k != 'input'])
