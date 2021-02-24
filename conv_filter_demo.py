@@ -35,7 +35,12 @@ def generate_kernels(shape, w=1.0):
     a135 = rotate(h, 135)
     normalize(a135, w)
 
-    return {'vert': v, }#'a45': a45, 'horiz': h, 'a135': a135}
+    return {
+        'vert': v,
+        'a45': a45,
+        # 'horiz': h,
+        # 'a135': a135
+    }
 
 img_name = 'test_img'
 # img_name = 'test_pulse'
@@ -45,7 +50,7 @@ img = cv2.imread('./{}.png'.format(img_name),
 ##################################################
 ###             N E W    S H A P E             ###
 ##################################################
-new_shape = (np.asarray(img.shape) * 1.6).astype('int')
+new_shape = (np.asarray(img.shape) * 0.5).astype('int')
 
 img = cv2.resize(img, tuple(new_shape))
 
@@ -84,7 +89,7 @@ kernels = generate_kernels(k_shape, 1.5)
 
 sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=1024)
-# sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=100)
+sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=25)
 
 run_time = 100.
 
