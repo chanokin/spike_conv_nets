@@ -106,7 +106,7 @@ if bool(0):
 else:
     src = sim.Population(n_input, sim.SpikeSourcePoisson,
                          {'rate': rates}, label='input spikes')
-# src.record('spikes')
+src.record('spikes')
 
 conns = {k: sim.ConvolutionConnector(shape, kernels[k], strides=stride)
          for k in kernels}
@@ -131,8 +131,8 @@ outputs = {
                       params, label="out_{}".format(k))
     for k in out_shapes
 }
-# for k in outputs:
-#     outputs[k].record(['v', 'spikes'])
+for k in outputs:
+    outputs[k].record(['v', 'spikes'])
 # syn = sim.StaticSynapse(weight=ws.flatten)
 
 
