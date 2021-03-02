@@ -50,7 +50,7 @@ img = cv2.imread('./{}.png'.format(img_name),
 ##################################################
 ###             N E W    S H A P E             ###
 ##################################################
-new_shape = (np.asarray(img.shape) * 2.2).astype('int')
+new_shape = (np.asarray(img.shape) * 4.4).astype('int')
 
 img = cv2.resize(img, tuple(new_shape))
 
