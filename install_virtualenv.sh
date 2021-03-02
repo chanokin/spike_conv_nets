@@ -6,40 +6,42 @@ else
   BRANCH=$1
 fi
 
+VENV="venv3"
+
 #---------------------------------------
 # Check modules out of git
 #---------------------------------------
 # Clone low-level tools
-git clone -b $BRANCH https://github.com/SpiNNakerManchester/spinnaker_tools.git
-git clone -b $BRANCH https://github.com/SpiNNakerManchester/spinn_common.git
-git clone -b $BRANCH https://github.com/SpiNNakerManchester/ybug.git
-git clone -b $BRANCH https://github.com/SpiNNakerManchester/spalloc.git
+#git clone -b $BRANCH https://github.com/SpiNNakerManchester/spinnaker_tools.git
+#git clone -b $BRANCH https://github.com/SpiNNakerManchester/spinn_common.git
+#git clone -b $BRANCH https://github.com/SpiNNakerManchester/ybug.git
+#git clone -b $BRANCH https://github.com/SpiNNakerManchester/spalloc.git
 
 # Clone sPyNNaker and requirements
-git clone -b $BRANCH https://github.com/SpiNNakerManchester/SpiNNUtils.git
-git clone -b $BRANCH https://github.com/SpiNNakerManchester/DataSpecification.git
-git clone -b $BRANCH https://github.com/SpiNNakerManchester/SpiNNMachine.git
-git clone -b $BRANCH https://github.com/SpiNNakerManchester/SpiNNMan.git
-git clone -b $BRANCH https://github.com/SpiNNakerManchester/PACMAN.git
-git clone -b $BRANCH https://github.com/SpiNNakerManchester/SpiNNFrontEndCommon.git
+#git clone -b $BRANCH https://github.com/SpiNNakerManchester/SpiNNUtils.git
+#git clone -b $BRANCH https://github.com/SpiNNakerManchester/DataSpecification.git
+#git clone -b $BRANCH https://github.com/SpiNNakerManchester/SpiNNMachine.git
+#git clone -b $BRANCH https://github.com/SpiNNakerManchester/SpiNNMan.git
+#git clone -b $BRANCH https://github.com/SpiNNakerManchester/PACMAN.git
+#git clone -b $BRANCH https://github.com/SpiNNakerManchester/SpiNNFrontEndCommon.git
 #git clone -b $BRANCH https://github.com/SpiNNakerManchester/sPyNNaker.git
-git clone -b $BRANCH https://github.com/SpiNNakerManchester/SpiNNStorageHandlers.git
-git clone -b $BRANCH https://github.com/SpiNNakerManchester/SpiNNakerGraphFrontEnd.git
+#git clone -b $BRANCH https://github.com/SpiNNakerManchester/SpiNNStorageHandlers.git
+#git clone -b $BRANCH https://github.com/SpiNNakerManchester/SpiNNakerGraphFrontEnd.git
 # Clone extra modules
 #git clone -b $BRANCH https://github.com/SpiNNakerManchester/sPyNNakerExtraModelsPlugin.git
 #git clone -b $BRANCH https://github.com/SpiNNakerManchester/sPyNNakerExternalDevicesPlugin.git
 #git clone -b $BRANCH https://github.com/SpiNNakerManchester/PyNNExamples.git
 
-exit
+#exit
 
 #---------------------------------------
 # Setup virtualenv
 #---------------------------------------
 # Create virtualenv
-virtualenv virtualenv --system-site-packages
+python3 -m venv --system-site-packages $VENV
 
 # Activate the virtualenv
-cd virtualenv
+cd $VENV
 . bin/activate
 
 #---------------------------------------
@@ -117,8 +119,10 @@ SPINN_DIRS=$PWD
 pip install rig
 pip install rig_c_sa
 
-cd ../virtualenv/bin
+cd ../$VENV/bin
 echo -e "\nexport NEURAL_MODELLING_DIRS=$NEURAL_MODELLING_DIRS" >> activate
 echo -e "\nexport SPINN_DIRS=$SPINN_DIRS" >> activate
 echo -e "\nexport SPINN_VERSION=131" >> activate
+echo -e "\nexport PATH=\$SPINN_DIRS/tools:\$PATH" >> activate
+echo -e "\nexport PERL5LIB=\$SPINN_DIRS/tools:\$PERL5LIB" >> activate
 
