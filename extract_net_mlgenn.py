@@ -22,6 +22,7 @@ param_trans = {
     }
 }
 
+
 def get_neuron_params(lyr, translations=param_trans):
     ft = translations['neurons']
     d = {}
@@ -34,11 +35,12 @@ def get_neuron_params(lyr, translations=param_trans):
             d[k] = tmp[ft[k][1]]
     return d
 
+
 def get_connectivity(lyr, translations=param_trans):
     tp = type(lyr).lower()
     if 'conv2d' in tp:
         k = 'conv2d'
-    elif 'dense' in tp:
+    else:  # 'dense' in tp:
         k = 'dense'
 
     ft = translations[k]

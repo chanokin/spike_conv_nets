@@ -159,9 +159,9 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
                         np.logical_and(tss <= times, times < tee))
                 if len(whr[0]):
                     row, col = nid // w, nid % w
-                    [padr, padc] = k_shape // 2
-                    row = row * stride[0] + padr
-                    col = col * stride[1] + padc
+                    # [padr, padc] = k_shape // 2
+                    # row = row * stride[0] + padr
+                    # col = col * stride[1] + padc
                     print(k, row, col, ts, te, tidx)
                     ax.plot(col, row, marker="^",#char[k],
                             markersize=20.,
