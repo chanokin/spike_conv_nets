@@ -50,7 +50,7 @@ img = cv2.imread('./{}.png'.format(img_name),
 ##################################################
 ###             N E W    S H A P E             ###
 ##################################################
-new_shape = (np.asarray(img.shape) * 2.2).astype('int')
+new_shape = (np.asarray(img.shape) * 1.0).astype('int')
 
 img = cv2.resize(img, tuple(new_shape))
 
@@ -92,9 +92,9 @@ for k in kernels:
 # sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
 sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=2048)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=1024)
-# sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=25)
+sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=100)
 
-run_time = 100.
+run_time = 50.
 
 sim.setup(timestep=1.)
 
@@ -134,9 +134,9 @@ outputs = {
     for k in out_shapes
 }
 
-# src.record('spikes')
-# for k in outputs:
-#     outputs[k].record(['v', 'spikes'])
+src.record('spikes')
+for k in outputs:
+    outputs[k].record(['v', 'spikes'])
 # syn = sim.StaticSynapse(weight=ws.flatten)
 
 
