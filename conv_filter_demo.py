@@ -92,7 +92,7 @@ for k in kernels:
 # sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
 sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=2048)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=1024)
-sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=100)
+# sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=100)
 
 run_time = 50.
 
