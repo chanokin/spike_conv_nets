@@ -82,7 +82,6 @@ def get_connectivity(lyr, translations=param_trans):
     return d
 
 
-
 tf_model = models.load_model('simple_cnn_tf_model')
 mlg_model = Model.convert_tf_model(tf_model, input_type='poisson', 
                 connectivity_type='procedural')
