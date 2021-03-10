@@ -25,13 +25,13 @@ vline = [[20. + idx // shape[1]]
 k_shape = (16, 16)
 wmax = 5.0
 # ws = np.random.uniform(-wmax, wmax, k_shape)
-ws = np.arange(int(np.prod(k_shape))).reshape(k_shape)
+# ws = np.arange(int(np.prod(k_shape))).reshape(k_shape)
 # ws = np.arange(np.prod(k_shape), dtype='float').reshape(k_shape)
 # ws[:, k_shape[1]//2] = np.arange(k_shape[1]) + 2.
 # ws[:, k_shape[1]//2] *= -0.8
 # ws[:, k_shape[1]//2+1:] = 0.
-print(ws)
-print(np.sum(ws))
+# print(ws)
+# print(np.sum(ws))
 # ws[:] = ws / np.sum(ws**2)
 # ws[:] = ws - np.mean(ws)
 # ws[ws > 0] /= np.sum( (ws > 0) * ws )
@@ -48,39 +48,20 @@ sim.setup(timestep=1.)
 
 src = sim.Population(n_input, sim.SpikeSourceArray,
                      {'spike_times': vline}, label='input spikes')
-k_shape = np.asarray([16, 16], dtype='int')
 
 pooling = np.asarray([2, 2])
 pooling_stride = np.asarray([2, 2])
-shape_out = sim.PoolDenseConnector.calc_post_shape(
+pool_shape = sim.PoolDenseConnector.calc_post_shape(
                                     shape, True, pooling, pooling_stride)
+n_out = 20
+k_shape = np.asarray(
+    (int(np.prod(pool_shape)), n_out),
+    dtype='int')
 
-conn = sim.PoolDenseConnector(shape, ws, pooling, pooling_stride)
+ws = np.arange(int(np.prod(k_shape))).reshape(k_shape)
+conn = sim.PoolDenseConnector(shape, ws, n_out, pooling, pooling_stride)
 
-sum_inputs = np.zeros(shape_out)
-hh, hw = k_shape // 2
-for i, x in enumerate(vline):
-    if len(x):
-        print(i, x)
-        r, c = i // shape[1], i % shape[1]
-        print("pre {}, r {}, c {}".format(i, r, c))
-        postr, postc = conn.pre_as_post(r, c)
-        print("postr {}, postc {}".format(postr, postc))
-        for kr in range(-hh, hh+1):
-            for kc in range(-hw, hw+1):
-                newr = postr + kr
-                newc = postc + kc
-                if (newr < 0 or newr >= shape_out[0] or
-                    newc < 0 or newc >= shape_out[1]):
-                    continue
-                www = ws[kr + k_shape[0] // 2, kc + k_shape[1] // 2]
-                print("row {}, col {}, w {}".format(newr, newc, www))
 
-                sum_inputs[newr, newc] += www
-
-print(sum_inputs)
-
-n_out = int(np.prod(shape_out, dtype='int32'))
 post_cfg = {
     'v_thresh': -60.0,
     'v_reset': -80.0,
@@ -104,24 +85,24 @@ print(spikes)
 
 sim.end()
 
-sum_inputs += post_cfg['v_rest']
-maxv = max(post_cfg['v_thresh']*0.9, np.max(sum_inputs))
-color = ['red', 'blue', 'green', 'orange']
-
-plt.figure()
-plt.axhspan(post_cfg['v_thresh'], maxv, color='gray', alpha=0.3)
-plt.axhline(post_cfg['v_reset'], color='gray', linestyle=':')
-for i, w in enumerate(sum_inputs.flatten()):
-    plt.axhline(w, linestyle='--')#, color=color[i])
-
-for i, vv in enumerate(v.T):
-    plt.plot(vv, label=i)#, color=color[i])
-
-for i, spks in enumerate(spikes):
-    for t in spks:
-        plt.axvline(float(t), linestyle=':')#, color=color[i])
-
-plt.legend()
-
-plt.show()
-
+# sum_inputs += post_cfg['v_rest']
+# maxv = max(post_cfg['v_thresh']*0.9, np.max(sum_inputs))
+# color = ['red', 'blue', 'green', 'orange']
+#
+# plt.figure()
+# plt.axhspan(post_cfg['v_thresh'], maxv, color='gray', alpha=0.3)
+# plt.axhline(post_cfg['v_reset'], color='gray', linestyle=':')
+# for i, w in enumerate(sum_inputs.flatten()):
+#     plt.axhline(w, linestyle='--')#, color=color[i])
+#
+# for i, vv in enumerate(v.T):
+#     plt.plot(vv, label=i)#, color=color[i])
+#
+# for i, spks in enumerate(spikes):
+#     for t in spks:
+#         plt.axvline(float(t), linestyle=':')#, color=color[i])
+#
+# plt.legend()
+#
+# plt.show()
+#
