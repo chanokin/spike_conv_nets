@@ -65,6 +65,7 @@ def get_connectivity(lyr, translations=param_trans):
     for k in ft:
         if isinstance(ft[k], str):
             d[k] = getattr(ws, ft[k])
+            d[k] = d[k].value if 'padding' in k else d[k]
         else:
             tmp = getattr(ws, ft[k][0])
             d[k] = tmp[ft[k][1]]
@@ -75,11 +76,13 @@ def get_connectivity(lyr, translations=param_trans):
         for k in ft:
             if isinstance(ft[k], str):
                 pd[k] = getattr(ws, ft[k])
+                pd[k] = pd[k].value if 'padding' in k else pd[k]
             else:
                 tmp = getattr(ws, ft[k][0])
                 pd[k] = tmp[ft[k][1]]
         d['pool'] = pd
     return d
+
 
 
 tf_model = models.load_model('simple_cnn_tf_model')
