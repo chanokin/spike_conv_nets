@@ -123,7 +123,7 @@ as_post = {k: {r: {c: conns[k].pre_as_post(r, c)
                for r in range(shape[0])}
            for k in conns}
 
-out_shapes = {k: conns[k].get_post_shape() for k in conns}
+out_shapes = {k: conns[k].get_post_pool_shape() for k in conns}
 out_sizes = {k: int(np.prod(out_shapes[k])) for k in out_shapes}
 
 params = {

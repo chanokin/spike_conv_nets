@@ -51,7 +51,7 @@ src = sim.Population(n_input, sim.SpikeSourceArray,
 
 pooling = np.asarray([2, 2])
 pooling_stride = np.asarray([2, 2])
-pool_shape = sim.PoolDenseConnector.calc_post_shape(
+pool_shape = sim.PoolDenseConnector.calc_post_pool_shape(
                                     shape, True, pooling, pooling_stride)
 n_out = 128
 k_shape = np.asarray(
