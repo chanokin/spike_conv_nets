@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 
 np.random.seed(13)
 
-sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=250)
+sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=12)
 
-shape = np.array([7, 7], dtype='int32')  # h, w
+shape = np.array([5, 5], dtype='int32')  # h, w
 n_input = int(np.prod(shape, dtype='int32'))
 stride = np.array([1, 1], dtype='int32')  # h, w
 k_shape = np.array([3, 3], dtype='int32')
@@ -47,6 +47,9 @@ sim.setup(timestep=1.)
 src = sim.Population(n_input, sim.SpikeSourceArray,
                      {'spike_times': vline}, label='input spikes')
 
+src1 = sim.Population(n_input, sim.SpikeSourceArray,
+                     {'spike_times': vline}, label='input spikes 1')
+
 conn = sim.ConvolutionConnector(shape, ws, strides=stride)
 shape_out = conn.get_post_shape()
 sum_inputs = np.zeros(shape_out)
@@ -85,6 +88,7 @@ dst.record(['v', 'spikes'])
 # syn = sim.StaticSynapse(weight=ws.flatten)
 
 prj = sim.Projection(src, dst, conn)
+# prj1 = sim.Projection(src1, dst, conn)
 
 sim.run(run_time)
 
