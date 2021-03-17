@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 np.random.seed(13)
 
-# sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=12)
+sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=12)
 
 shape = np.array([5, 5], dtype='int32')  # h, w
 n_input = int(np.prod(shape, dtype='int32'))
@@ -23,7 +23,8 @@ vline = [[20. + idx // shape[1]]
 
 
 wmax = 5.0
-ws = np.random.uniform(-wmax, wmax, k_shape)
+# ws = np.random.uniform(-wmax, wmax, k_shape)
+ws = np.arange(np.prod(k_shape)).reshape(k_shape) * 0.25
 # ws = np.arange(np.prod(k_shape), dtype='float').reshape(k_shape)
 # ws[:, k_shape[1]//2] = np.arange(k_shape[1]) + 2.
 # ws[:, k_shape[1]//2] *= -0.8
@@ -51,6 +52,7 @@ src1 = sim.Population(n_input, sim.SpikeSourceArray,
                       {'spike_times': vline}, label='input spikes 1')
 
 conn = sim.ConvolutionConnector(shape, ws, strides=stride)
+conn1 = sim.ConvolutionConnector(shape, ws*2., strides=stride)
 shape_out = conn.get_post_shape()
 sum_inputs = np.zeros(shape_out)
 hh, hw = k_shape // 2
@@ -88,7 +90,7 @@ dst.record(['v', 'spikes'])
 # syn = sim.StaticSynapse(weight=ws.flatten)
 
 prj = sim.Projection(src, dst, conn)
-prj1 = sim.Projection(src1, dst, conn)
+prj1 = sim.Projection(src1, dst, conn1)
 
 sim.run(run_time)
 
