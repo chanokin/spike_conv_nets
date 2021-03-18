@@ -7,8 +7,15 @@ sim.setup(timestep=1.)
 np.random.seed(13)
 n_neurons = 10
 n_changes = 5
-duration = 50.0  # ms
-rates = np.random.randint(0, 5, size=(n_neurons, n_changes))*10
+duration = 100.0  # ms
+rate = 100.0  # hz
+rates = np.zeros((n_neurons, n_changes))
+n_per_change = n_neurons // n_changes
+for i in range(n_changes):
+    s = i * n_per_change
+    e = s + n_per_change
+    rates[s:e, i] = rate
+
 durations = np.ones((n_neurons, n_changes)) * duration
 starts = np.repeat([np.arange(n_changes) * duration],
                    n_neurons, axis=0)
@@ -34,7 +41,7 @@ spikes = neo.segments[0].spiketrains
 
 sim.end()
 
-print(spikes)
+# print(spikes)
 
 plt.figure()
 for i, spks in enumerate(spikes):
