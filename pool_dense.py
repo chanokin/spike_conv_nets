@@ -49,6 +49,9 @@ sim.setup(timestep=1.)
 src = sim.Population(n_input, sim.SpikeSourceArray,
                      {'spike_times': vline}, label='input spikes')
 
+src1 = sim.Population(n_input, sim.SpikeSourceArray,
+                     {'spike_times': vline}, label='input spikes')
+
 pooling = np.asarray([2, 2])
 pooling_stride = np.asarray([2, 2])
 pool_shape = sim.PoolDenseConnector.calc_post_pool_shape(
@@ -60,6 +63,7 @@ k_shape = np.asarray(
 
 ws = np.arange(int(np.prod(k_shape))).reshape(k_shape)
 conn = sim.PoolDenseConnector(shape, ws, n_out, pooling, pooling_stride)
+conn1 = sim.PoolDenseConnector(shape, ws, n_out, pooling, pooling_stride)
 
 
 post_cfg = {
@@ -74,6 +78,7 @@ dst.record(['v', 'spikes'])
 # syn = sim.StaticSynapse(weight=ws.flatten)
 
 prj = sim.Projection(src, dst, conn)
+prj1 = sim.Projection(src1, dst, conn)
 
 sim.run(run_time)
 
