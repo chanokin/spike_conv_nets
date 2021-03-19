@@ -119,8 +119,18 @@ for i, o in enumerate(order):
                 prj = sim.Projection(pre, post, cn, label=lbl)
                 projs[lbl] = prj
             elif 'dense' in o.lower():
-                wshape = c['shape']
+                n_out = c['size']
+                pooling = 'pool' in c
+                pool_area = c['pool']['shape'] if pooling else None
+                pool_stride = c['pool']['strides'] if pooling else None
+                sh_pre = sim.PoolDenseConnector.calc_post_pool_shape(
+                            pre_shape, pooling, pool_area, pool_stride)
+                size_pre = int(np.prod(sh_pre))
 
+                ws = c['weights']
+                lbl = "{} to {}_{}".format(o0, o, posti)
+                sim.PoolDenseConnector(pre_shape, ws, n_out, pool_area,
+                                       pool_stride)
 
 
 
