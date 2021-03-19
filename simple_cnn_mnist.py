@@ -9,7 +9,7 @@ filename = "simple_cnn_network_elements.npz"
 data = np.load(filename, allow_pickle=True)
 
 order0 = data['order']
-order = order0[:4]
+order = order0[:6]
 ml_conns = data['conns'].item()
 ml_param = data['params'].item()
 
@@ -31,7 +31,7 @@ print('Y_test:  ' + str(test_y.shape))
 
 # sim.extra_models.SpikeSourcePoissonVariable.set_model_max_atoms_per_core(300)
 sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
-# sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(n_atoms=1024)
+# sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(n_atoms=64)
 
 sim.setup(timestep=1.)
 
@@ -65,7 +65,7 @@ pops = {
     )]
 }
 
-pops['input'][0].record('spikes')
+# pops['input'][0].record('spikes')
 
 # ------------------------------------------------------------------- #
 # ------------------------------------------------------------------- #
@@ -86,18 +86,32 @@ for i, o in enumerate(order):
         shape = par['shape'][0:2]
         chans = par['shape'][2]
         ps = def_params.copy()
+        v = ps.pop('v')
         ps['v_thresh'] = par['threshold']
         n = int(np.prod(shape))
         print(o, n, shape, chans)
         pop = [sim.Population(n, sim.IF_curr_exp_conv, ps,
-                              label="{}_chan_{}".format(o, chan))
-               for chan in range(chans)]
+                              label="{}_chan_{}".format(o, ch))
+               for ch in range(chans)]
+        for p in pop:
+            p.set(v=v)
     elif 'dense' in o.lower():
         shape = par['shape'][0:2]
+        ps = def_params.copy()
+        v = ps.pop('v')
+        ps['v_thresh'] = par['threshold']
+
+        n = int(np.prod(shape))
+        chans = 1
+        if 'conv2d' in order[i-1]:
+            chans = 4
+            n = n // chans
 
         pop = [sim.Population(n, sim.IF_curr_exp_pool_dense, ps,
-                              label="{}_chan".format(o))]
-
+                              label="{}_chan_{}".format(o, ch))
+               for ch in range(chans)]
+        for p in pop:
+            p.set(v=v)
 
     pops[o] = pop
 
@@ -114,7 +128,7 @@ for i, o in enumerate(order):
             print(pre_shape, o0, prei, o, posti)
             if 'conv2d' in o.lower():
                 wshape = c['shape']
-                print(prei, posti, wshape, c['weights'].shape)
+                # print(prei, posti, wshape, c['weights'].shape)
                 strides = c['strides']
                 w = c['weights'][:, :, prei, posti].reshape(wshape)
                 pool_area = c['pool']['shape'] if 'pool' in c else None
@@ -125,7 +139,7 @@ for i, o in enumerate(order):
                 projs[lbl] = prj
             elif 'dense' in o.lower():
                 if len(pre_shape) == 1:
-                    pre_shape = (pre_shape[0], 1)
+                    pre_shape = (pre.size, 1)
                 n_out = post.size
                 pooling = 'pool' in c
                 pool_area = np.asarray(c['pool']['shape']) if pooling else None
@@ -133,15 +147,16 @@ for i, o in enumerate(order):
                 sh_pre = sim.PoolDenseConnector.calc_post_pool_shape(
                             pre_shape, pooling, pool_area, pool_stride)
                 size_pre = int(np.prod(sh_pre))
-                sw = size_pre * prei
-                ew = sw + size_pre
-                ws = c['weights'][sw:ew, :]
+                srw = size_pre * prei
+                erw = srw + size_pre
+                scw = posti * n_out
+                ecw = scw + n_out
+                ws = c['weights'][srw:erw, scw:ecw]
                 cn = sim.PoolDenseConnector(pre_shape, ws, n_out, pool_area,
                                             pool_stride)
 
                 prj = sim.Projection(pre, post, cn, label=lbl)
                 projs[lbl] = prj
-
 
 sim_time = digit_duration * n_digits * 1.1
 
