@@ -8,7 +8,8 @@ filename = "simple_cnn_network_elements.npz"
 
 data = np.load(filename, allow_pickle=True)
 
-order = data['order']
+order0 = data['order']
+order = order0[:4]
 ml_conns = data['conns'].item()
 ml_param = data['params'].item()
 
@@ -29,6 +30,9 @@ print('Y_test:  ' + str(test_y.shape))
 # plt.show()
 
 # sim.extra_models.SpikeSourcePoissonVariable.set_model_max_atoms_per_core(300)
+sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
+# sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(n_atoms=1024)
+
 sim.setup(timestep=1.)
 
 np.random.seed(13)
@@ -103,15 +107,16 @@ for i, o in enumerate(order):
         continue
     o0 = order[i-1]
     for prei, pre in enumerate(pops[o0]):
-        pre_shape = ml_param[o0]['shape'][:2]
+        pre_shape = np.asarray(ml_param[o0]['shape'][:2])
         c = ml_conns[o]
         for posti, post in enumerate(pops[o]):
+            lbl = "{}_{} to {}_{}".format(o0, prei, o, posti)
+            print(pre_shape, o0, prei, o, posti)
             if 'conv2d' in o.lower():
                 wshape = c['shape']
                 print(prei, posti, wshape, c['weights'].shape)
                 strides = c['strides']
                 w = c['weights'][:, :, prei, posti].reshape(wshape)
-                lbl = "{} to {}_{}".format(o0, o, posti)
                 pool_area = c['pool']['shape'] if 'pool' in c else None
                 pool_stride = c['pool']['strides'] if 'pool' in c else None
                 cn = sim.ConvolutionConnector(pre_shape, w, strides=strides,
@@ -119,19 +124,23 @@ for i, o in enumerate(order):
                 prj = sim.Projection(pre, post, cn, label=lbl)
                 projs[lbl] = prj
             elif 'dense' in o.lower():
-                n_out = c['size']
+                if len(pre_shape) == 1:
+                    pre_shape = (pre_shape[0], 1)
+                n_out = post.size
                 pooling = 'pool' in c
-                pool_area = c['pool']['shape'] if pooling else None
-                pool_stride = c['pool']['strides'] if pooling else None
+                pool_area = np.asarray(c['pool']['shape']) if pooling else None
+                pool_stride = np.asarray(c['pool']['strides']) if pooling else None
                 sh_pre = sim.PoolDenseConnector.calc_post_pool_shape(
                             pre_shape, pooling, pool_area, pool_stride)
                 size_pre = int(np.prod(sh_pre))
+                sw = size_pre * prei
+                ew = sw + size_pre
+                ws = c['weights'][sw:ew, :]
+                cn = sim.PoolDenseConnector(pre_shape, ws, n_out, pool_area,
+                                            pool_stride)
 
-                ws = c['weights']
-                lbl = "{} to {}_{}".format(o0, o, posti)
-                sim.PoolDenseConnector(pre_shape, ws, n_out, pool_area,
-                                       pool_stride)
-
+                prj = sim.Projection(pre, post, cn, label=lbl)
+                projs[lbl] = prj
 
 
 sim_time = digit_duration * n_digits * 1.1
