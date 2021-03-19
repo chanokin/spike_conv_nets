@@ -14,8 +14,8 @@ ml_param = data['params'].item()
 
 print(list(data.keys()))
 
-test_X = mnist.test_images()
-test_y = mnist.test_labels()
+test_X = mnist.test_images('./')
+test_y = mnist.test_labels('./')
 
 # shape of dataset
 print('X_test:  ' + str(test_X.shape))
