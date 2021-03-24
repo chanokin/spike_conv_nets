@@ -3,13 +3,14 @@ import numpy as np
 import mnist
 import matplotlib.pyplot as plt
 import plotting
+import sys
 
 filename = "simple_cnn_network_elements.npz"
 
 data = np.load(filename, allow_pickle=True)
 
 order0 = data['order']
-order = order0[:6]
+order = order0[:2]
 ml_conns = data['conns'].item()
 ml_param = data['params'].item()
 
@@ -39,9 +40,9 @@ np.random.seed(13)
 
 shape_in = np.asarray([28, 28])
 n_in = int(np.prod(shape_in))
-n_digits = 9
+n_digits = 5
 digit_duration = 500.0  # ms
-digit_rate = 10.0  # hz
+digit_rate = 5.0  # hz
 in_rates = np.zeros((n_in, n_digits))
 for i in range(n_digits):
     in_rates[:, i] = test_X[i].flatten()
@@ -65,7 +66,6 @@ pops = {
     )]
 }
 
-# pops['input'][0].record('spikes')
 
 # ------------------------------------------------------------------- #
 # ------------------------------------------------------------------- #
@@ -115,6 +115,11 @@ for i, o in enumerate(order):
 
     pops[o] = pop
 
+rec = ['input', 'conv2d']
+for k in rec:
+    for p in pops[k]:
+        p.record('spikes')
+
 projs = {}
 for i, o in enumerate(order):
     if i == 0:
@@ -160,14 +165,21 @@ for i, o in enumerate(order):
 
 sim_time = digit_duration * n_digits * 1.1
 
+neos = {}
+spikes = {}
 sim.run(sim_time)
 
-neo = pops['input'][0].get_data()
-spikes = neo.segments[0].spiketrains
+for k in rec:
+    neos[k] = [p.get_data() for p in pops[k]]
+    spikes[k] = [x.segments[0].spiketrains for x in neos[k]]
+
 
 sim.end()
 
-imgs, bins = plotting.spikes_to_images(spikes, shape_in, sim_time,
+# sys.exit()
+
+in_spikes = spikes['input'][0]
+imgs, bins = plotting.spikes_to_images(in_spikes, shape_in, sim_time,
                                        digit_duration//2)
 nrows = 3
 nimgs = len(imgs)
@@ -180,6 +192,26 @@ for i in range(nimgs):
     ax.set_xticks([])
     ax.set_yticks([])
 
+for k in spikes:
+    if k == 'input':
+        continue
+    for p in spikes[k]:
+        # fig = plt.figure()
+        imgs, bins = plotting.spikes_to_images(p, [24, 24], sim_time,
+                                               digit_duration // 2)
+        nrows = 3
+        nimgs = len(imgs)
+        ncols = nimgs // nrows + int(nimgs % nrows > 0)
+
+        fig = plt.figure(figsize=(ncols, nrows))
+        for i in range(nimgs):
+            ax = plt.subplot(nrows, ncols, i + 1)
+            ax.imshow(imgs[i])
+            ax.set_xticks([])
+            ax.set_yticks([])
+
 plt.show()
+
+
 
 

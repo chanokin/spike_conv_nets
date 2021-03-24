@@ -125,7 +125,9 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
             for nid, v in enumerate(vs):
                 row, col = nid // w, nid % w
 
-                row, col = as_post[k][row][col] + 1
+                row += k_shape[0] // 2
+                col += k_shape[1] // 2
+                # row, col = as_post[k][row][col] + 1
 
                 out_imgs[k][row, col] = float(v)
 
@@ -159,6 +161,9 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
                         np.logical_and(tss <= times, times < tee))
                 if len(whr[0]):
                     row, col = nid // w, nid % w
+                    row += k_shape[0] // 2
+                    col += k_shape[1] // 2
+
                     # [padr, padc] = k_shape // 2
                     # row = row * stride[0] + padr
                     # col = col * stride[1] + padc
