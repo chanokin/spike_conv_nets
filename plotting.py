@@ -12,7 +12,7 @@ def spikes_to_bins(spikes, max_t, t_bin):
 
     return sbins
 
-def spikes_to_images(spikes, shape, max_t, t_bin):
+def spikes_to_images(spikes, shape, max_t, t_bin, offset_row=0):
     binned = spikes_to_bins(spikes, max_t, t_bin)
     images = []
     max_idx = -1
@@ -24,6 +24,7 @@ def spikes_to_images(spikes, shape, max_t, t_bin):
                 if nidx > max_idx:
                     max_idx = nidx
                 r, c = nidx // shape[1], nidx % shape[1]
+                r += offset_row
                 # print(nidx, r, c, nspks)
                 img[r, c] = nspks
         images.append(img)

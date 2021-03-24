@@ -10,7 +10,7 @@ filename = "simple_cnn_network_elements.npz"
 data = np.load(filename, allow_pickle=True)
 
 order0 = data['order']
-order = order0[:2]
+order = order0[:]
 ml_conns = data['conns'].item()
 ml_param = data['params'].item()
 
@@ -32,6 +32,7 @@ print('Y_test:  ' + str(test_y.shape))
 
 # sim.extra_models.SpikeSourcePoissonVariable.set_model_max_atoms_per_core(300)
 sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
+# sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=256)
 # sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(n_atoms=64)
 
 sim.setup(timestep=1.)
@@ -74,7 +75,7 @@ def_params = {
     'v_rest': 0.,
     'v_reset': 0.,
     'v': 0.,
-    'tau_m': np.round(digit_duration // 3.),
+    'tau_m': np.round(digit_duration // 2.),
 }
 
 for i, o in enumerate(order):
@@ -115,9 +116,32 @@ for i, o in enumerate(order):
 
     pops[o] = pop
 
-rec = ['input', 'conv2d']
+rec = [
+    'input',
+    # 'conv2d',
+    # 'conv2d_1',
+    # 'dense',
+    # 'dense_1',
+    'dense_2',
+]
+shapes = {
+    'input': [28, 28],
+    'conv2d': [24, 24],
+    'conv2d_1': [8, 8],
+    'dense': [12, 12],
+    'dense_1': [8, 8],
+    'dense_2': [4, 4],
+}
+offsets = {
+    'input': 0,
+    'conv2d': 0,
+    'conv2d_1': 0,
+    'dense': 32,
+    'dense_1': 0,
+    'dense_2': 0,
+}
 for k in rec:
-    for p in pops[k]:
+    for p in pops[k][:]:
         p.record('spikes')
 
 projs = {}
@@ -178,32 +202,17 @@ sim.end()
 
 # sys.exit()
 
-in_spikes = spikes['input'][0]
-imgs, bins = plotting.spikes_to_images(in_spikes, shape_in, sim_time,
-                                       digit_duration//2)
-nrows = 3
-nimgs = len(imgs)
-ncols = nimgs // nrows + int(nimgs % nrows > 0)
-
-fig = plt.figure(figsize=(ncols, nrows))
-for i in range(nimgs):
-    ax = plt.subplot(nrows, ncols, i + 1)
-    ax.imshow(imgs[i])
-    ax.set_xticks([])
-    ax.set_yticks([])
-
 for k in spikes:
-    if k == 'input':
-        continue
-    for p in spikes[k]:
+    for pi, p in enumerate(spikes[k]):
         # fig = plt.figure()
-        imgs, bins = plotting.spikes_to_images(p, [24, 24], sim_time,
+        imgs, bins = plotting.spikes_to_images(p, shapes[k], sim_time,
                                                digit_duration // 2)
         nrows = 3
         nimgs = len(imgs)
         ncols = nimgs // nrows + int(nimgs % nrows > 0)
 
         fig = plt.figure(figsize=(ncols, nrows))
+        plt.suptitle("{}_{}".format(k, pi))
         for i in range(nimgs):
             ax = plt.subplot(nrows, ncols, i + 1)
             ax.imshow(imgs[i])
