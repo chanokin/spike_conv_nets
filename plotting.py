@@ -15,15 +15,19 @@ def spikes_to_bins(spikes, max_t, t_bin):
 def spikes_to_images(spikes, shape, max_t, t_bin):
     binned = spikes_to_bins(spikes, max_t, t_bin)
     images = []
+    max_idx = -1
     for bidx, sbin in enumerate(binned):
         img = np.zeros(shape)
         for nidx, spks in enumerate(sbin):
             nspks = len(spks)
             if nspks:
+                if nidx > max_idx:
+                    max_idx = nidx
                 r, c = nidx // shape[1], nidx % shape[1]
+                # print(nidx, r, c, nspks)
                 img[r, c] = nspks
         images.append(img)
-
+    print("\n\n\nmax_index found for spikes {}\n\n".format(max_idx))
     return images, binned
 
 
