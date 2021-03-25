@@ -12,8 +12,7 @@ def spikes_to_bins(spikes, max_t, t_bin):
 
     return sbins
 
-def spikes_to_images(spikes, shape, max_t, t_bin, offset_row=0):
-    binned = spikes_to_bins(spikes, max_t, t_bin)
+def __plot_binned_spikes(binned, shape, offset_row):
     images = []
     max_idx = -1
     for bidx, sbin in enumerate(binned):
@@ -21,14 +20,37 @@ def spikes_to_images(spikes, shape, max_t, t_bin, offset_row=0):
         for nidx, spks in enumerate(sbin):
             nspks = len(spks)
             if nspks:
+                nidx += offset_row
                 if nidx > max_idx:
                     max_idx = nidx
                 r, c = nidx // shape[1], nidx % shape[1]
-                r += offset_row
+
                 # print(nidx, r, c, nspks)
                 img[r, c] = nspks
         images.append(img)
     print("\n\n\nmax_index found for spikes {}\n\n".format(max_idx))
-    return images, binned
+    return images
+
+def spikes_to_images(spikes, shape, max_t, t_bin):
+    imgs, bins = spikes_to_images_list([spikes], shape, max_t, t_bin, 0, False)
+    return imgs[0], bins[0]
+
+def spikes_to_images_list(spikes_list, shape, max_t, t_bin, offset_row,
+                          merge_images=False):
+    bins = [spikes_to_bins(s, max_t, t_bin) for s in spikes_list]
+    imgs = [__plot_binned_spikes(b, shape, offset_row * i)
+            for i, b in enumerate(bins)]
+
+    if merge_images:
+        img0 = imgs[0]
+        for i in range(1, len(imgs)):
+            for j in range(len(img0)):
+                img0[j] += imgs[i][j]
+        return img0, bins
+
+    return imgs, bins
+
+
+
 
 

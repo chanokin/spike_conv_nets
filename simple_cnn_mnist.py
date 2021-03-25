@@ -10,7 +10,7 @@ filename = "simple_cnn_network_elements.npz"
 data = np.load(filename, allow_pickle=True)
 
 order0 = data['order']
-order = order0[:]
+order = order0[:2]
 ml_conns = data['conns'].item()
 ml_param = data['params'].item()
 
@@ -118,11 +118,11 @@ for i, o in enumerate(order):
 
 rec = [
     'input',
-    # 'conv2d',
+    'conv2d',
     # 'conv2d_1',
     # 'dense',
     # 'dense_1',
-    'dense_2',
+    # 'dense_2',
 ]
 shapes = {
     'input': [28, 28],
@@ -200,11 +200,29 @@ for k in rec:
 
 sim.end()
 
-# sys.exit()
+sys.exit()
 
 for k in spikes:
+    if k == 'dense':
+        imgs, bins = plotting.spikes_to_images_list(
+                                  spikes[k], shapes[k], sim_time,
+                                  digit_duration // 2, offsets[k],
+                                  merge_images=True)
+        nrows = 3
+        nimgs = len(imgs)
+        ncols = nimgs // nrows + int(nimgs % nrows > 0)
+
+        fig = plt.figure(figsize=(ncols, nrows))
+        plt.suptitle("{}_{}".format(k, 0))
+        for i in range(nimgs):
+            ax = plt.subplot(nrows, ncols, i + 1)
+            ax.imshow(imgs[i])
+            ax.set_xticks([])
+            ax.set_yticks([])
+        plt.savefig("{}_{}.pdf".format(k, 0))
+        continue
+
     for pi, p in enumerate(spikes[k]):
-        # fig = plt.figure()
         imgs, bins = plotting.spikes_to_images(p, shapes[k], sim_time,
                                                digit_duration // 2)
         nrows = 3
@@ -218,7 +236,7 @@ for k in spikes:
             ax.imshow(imgs[i])
             ax.set_xticks([])
             ax.set_yticks([])
-
+        plt.savefig("{}_{}.pdf".format(k, pi))
 plt.show()
 
 
