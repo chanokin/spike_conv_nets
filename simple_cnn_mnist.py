@@ -30,7 +30,7 @@ print('Y_test:  ' + str(test_y.shape))
 #
 # plt.show()
 
-# sim.extra_models.SpikeSourcePoissonVariable.set_model_max_atoms_per_core(300)
+sim.extra_models.SpikeSourcePoissonVariable.set_model_max_atoms_per_core(270)
 sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
 # sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=256)
 # sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(n_atoms=64)
@@ -200,7 +200,7 @@ for k in rec:
 
 sim.end()
 
-sys.exit()
+# sys.exit()
 
 for k in spikes:
     if k == 'dense':

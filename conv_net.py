@@ -24,7 +24,7 @@ vline = [[20. + idx // shape[1]]
 
 wmax = 5.0
 # ws = np.random.uniform(-wmax, wmax, k_shape)
-ws = np.arange(np.prod(k_shape)).reshape(k_shape) * 0.25
+ws = np.arange(np.prod(k_shape)).reshape(k_shape) * 0.25 - 2.5
 # ws = np.arange(np.prod(k_shape), dtype='float').reshape(k_shape)
 # ws[:, k_shape[1]//2] = np.arange(k_shape[1]) + 2.
 # ws[:, k_shape[1]//2] *= -0.8
@@ -86,7 +86,8 @@ post_cfg = {
 
 dst = sim.Population(
         n_out, sim.IF_curr_exp_conv, post_cfg)
-dst.record(['v', 'spikes'])
+# dst.record(['v', 'spikes'])
+dst.record('spikes')
 # syn = sim.StaticSynapse(weight=ws.flatten)
 
 prj = sim.Projection(src, dst, conn)
@@ -95,31 +96,31 @@ prj1 = sim.Projection(src1, dst, conn1)
 sim.run(run_time)
 
 neo = dst.get_data()
-v = neo.segments[0].filter(name='v')[0]
+# v = neo.segments[0].filter(name='v')[0]
 spikes = neo.segments[0].spiketrains
-print(v)
+# print(v)
 print(spikes)
 
 sim.end()
 
-sum_inputs += post_cfg['v_rest']
-maxv = max(post_cfg['v_thresh']*0.9, np.max(sum_inputs))
-color = ['red', 'blue', 'green', 'orange']
-
-plt.figure()
-plt.axhspan(post_cfg['v_thresh'], maxv, color='gray', alpha=0.3)
-plt.axhline(post_cfg['v_reset'], color='gray', linestyle=':')
-for i, w in enumerate(sum_inputs.flatten()):
-    plt.axhline(w, linestyle='--')#, color=color[i])
-
-for i, vv in enumerate(v.T):
-    plt.plot(vv, label=i)#, color=color[i])
-
-for i, spks in enumerate(spikes):
-    for t in spks:
-        plt.axvline(float(t), linestyle=':')#, color=color[i])
-
-plt.legend()
-
-plt.show()
-
+# sum_inputs += post_cfg['v_rest']
+# maxv = max(post_cfg['v_thresh']*0.9, np.max(sum_inputs))
+# color = ['red', 'blue', 'green', 'orange']
+#
+# plt.figure()
+# plt.axhspan(post_cfg['v_thresh'], maxv, color='gray', alpha=0.3)
+# plt.axhline(post_cfg['v_reset'], color='gray', linestyle=':')
+# for i, w in enumerate(sum_inputs.flatten()):
+#     plt.axhline(w, linestyle='--')#, color=color[i])
+#
+# for i, vv in enumerate(v.T):
+#     plt.plot(vv, label=i)#, color=color[i])
+#
+# for i, spks in enumerate(spikes):
+#     for t in spks:
+#         plt.axvline(float(t), linestyle=':')#, color=color[i])
+#
+# plt.legend()
+#
+# plt.show()
+#
