@@ -134,4 +134,6 @@ dmypy.json
 **/*raster_conv_filter_demo.png
 *.mp4
 *.npz
+*.pdf
+
 
