@@ -10,7 +10,7 @@ filename = "simple_cnn_network_elements.npz"
 data = np.load(filename, allow_pickle=True)
 
 order0 = data['order']
-order = order0[:2]
+order = order0[:]
 ml_conns = data['conns'].item()
 ml_param = data['params'].item()
 
@@ -43,7 +43,7 @@ shape_in = np.asarray([28, 28])
 n_in = int(np.prod(shape_in))
 n_digits = 5
 digit_duration = 500.0  # ms
-digit_rate = 5.0  # hz
+digit_rate = 10.0  # hz
 in_rates = np.zeros((n_in, n_digits))
 for i in range(n_digits):
     in_rates[:, i] = test_X[i].flatten()
@@ -75,7 +75,7 @@ def_params = {
     'v_rest': 0.,
     'v_reset': 0.,
     'v': 0.,
-    'tau_m': np.round(digit_duration // 2.),
+    'tau_m': 50.#np.round(digit_duration // 2.),
 }
 
 for i, o in enumerate(order):
@@ -119,10 +119,10 @@ for i, o in enumerate(order):
 rec = [
     'input',
     'conv2d',
-    # 'conv2d_1',
-    # 'dense',
-    # 'dense_1',
-    # 'dense_2',
+    'conv2d_1',
+    'dense',
+    'dense_1',
+    'dense_2',
 ]
 shapes = {
     'input': [28, 28],
@@ -219,7 +219,8 @@ for k in spikes:
             ax.imshow(imgs[i])
             ax.set_xticks([])
             ax.set_yticks([])
-        plt.savefig("{}_{}.pdf".format(k, 0))
+        plt.savefig("{}_{:03d}.pdf".format(k, 0))
+        plt.close(fig)
         continue
 
     for pi, p in enumerate(spikes[k]):
@@ -236,8 +237,9 @@ for k in spikes:
             ax.imshow(imgs[i])
             ax.set_xticks([])
             ax.set_yticks([])
-        plt.savefig("{}_{}.pdf".format(k, pi))
-plt.show()
+        plt.savefig("{}_{:03d}.png".format(k, pi))
+        plt.close(fig)
+# plt.show()
 
 
 
