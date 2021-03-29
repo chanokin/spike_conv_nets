@@ -43,7 +43,7 @@ shape_in = np.asarray([28, 28])
 n_in = int(np.prod(shape_in))
 n_digits = 5
 digit_duration = 500.0  # ms
-digit_rate = 10.0  # hz
+digit_rate = 5.0  # hz
 in_rates = np.zeros((n_in, n_digits))
 for i in range(n_digits):
     in_rates[:, i] = test_X[i].flatten()
@@ -75,7 +75,7 @@ def_params = {
     'v_rest': 0.,
     'v_reset': 0.,
     'v': 0.,
-    'tau_m': 50.#np.round(digit_duration // 2.),
+    'tau_m': 500.#np.round(digit_duration // 2.),
 }
 
 for i, o in enumerate(order):
@@ -145,6 +145,7 @@ for k in rec:
         p.record('spikes')
 
 projs = {}
+kernels = {}
 for i, o in enumerate(order):
     if i == 0:
         continue
@@ -152,20 +153,24 @@ for i, o in enumerate(order):
     for prei, pre in enumerate(pops[o0]):
         pre_shape = np.asarray(ml_param[o0]['shape'][:2])
         c = ml_conns[o]
+        wl = []
         for posti, post in enumerate(pops[o]):
             lbl = "{}_{} to {}_{}".format(o0, prei, o, posti)
             print(pre_shape, o0, prei, o, posti)
             if 'conv2d' in o.lower():
+
                 wshape = c['shape']
                 # print(prei, posti, wshape, c['weights'].shape)
                 strides = c['strides']
                 w = c['weights'][:, :, prei, posti].reshape(wshape)
+                wl.append(w)
                 pool_area = c['pool']['shape'] if 'pool' in c else None
                 pool_stride = c['pool']['strides'] if 'pool' in c else None
                 cn = sim.ConvolutionConnector(pre_shape, w, strides=strides,
                                           pooling=pool_area, pool_stride=pool_stride)
                 prj = sim.Projection(pre, post, cn, label=lbl)
                 projs[lbl] = prj
+
             elif 'dense' in o.lower():
                 if len(pre_shape) == 1:
                     pre_shape = (pre.size, 1)
@@ -186,6 +191,7 @@ for i, o in enumerate(order):
 
                 prj = sim.Projection(pre, post, cn, label=lbl)
                 projs[lbl] = prj
+        kernels[o] = wl
 
 sim_time = digit_duration * n_digits * 1.1
 
@@ -202,7 +208,10 @@ sim.end()
 
 # sys.exit()
 
-for k in spikes:
+for si, k in enumerate(order):
+    if k not in spikes:
+        continue
+
     if k == 'dense':
         imgs, bins = plotting.spikes_to_images_list(
                                   spikes[k], shapes[k], sim_time,
@@ -219,25 +228,43 @@ for k in spikes:
             ax.imshow(imgs[i])
             ax.set_xticks([])
             ax.set_yticks([])
-        plt.savefig("{}_{:03d}.pdf".format(k, 0))
+        plt.savefig("{:03d}_{}_{:03d}.pdf".format(si, k, 0))
         plt.close(fig)
         continue
 
     for pi, p in enumerate(spikes[k]):
         imgs, bins = plotting.spikes_to_images(p, shapes[k], sim_time,
                                                digit_duration // 2)
-        nrows = 3
         nimgs = len(imgs)
+        nrows = 3
+        if 'conv2d' in k:
+            nimgs += 1
+
         ncols = nimgs // nrows + int(nimgs % nrows > 0)
 
         fig = plt.figure(figsize=(ncols, nrows))
         plt.suptitle("{}_{}".format(k, pi))
         for i in range(nimgs):
+            if i == len(imgs):
+                break
+
             ax = plt.subplot(nrows, ncols, i + 1)
             ax.imshow(imgs[i])
             ax.set_xticks([])
             ax.set_yticks([])
-        plt.savefig("{}_{:03d}.png".format(k, pi))
+
+        if 'conv2d' in k:
+            w = kernels[k][pi]
+            vmax = np.max(np.abs(w))
+            ax = plt.subplot(nrows, ncols, nimgs)
+            im = ax.imshow(w, vmin=-vmax, vmax=vmax, cmap='PiYG')
+            ax.set_xticks([])
+            ax.set_yticks([])
+            plt.colorbar(im)
+
+
+
+        plt.savefig("{:03d}_{}_{:03d}.png".format(si, k, pi))
         plt.close(fig)
 # plt.show()
 
