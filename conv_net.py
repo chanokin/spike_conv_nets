@@ -5,16 +5,20 @@ import matplotlib.pyplot as plt
 
 np.random.seed(13)
 
-sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=12)
+# sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=12)
 
 shape = np.array([5, 5], dtype='int32')  # h, w
 n_input = int(np.prod(shape, dtype='int32'))
 stride = np.array([1, 1], dtype='int32')  # h, w
 k_shape = np.array([3, 3], dtype='int32')
 # vline = [[20.+np.random.randint(-2, 3)]
-vline = [[20. + idx // shape[1]]
+vline = [[20.]
          if (idx % shape[1]) == (shape[1] // 2) or idx == 13 else []
          for idx in range(n_input)]
+
+vline1 = [[10.]
+          if (idx % shape[1]) == (shape[1] // 2) or idx == 13 else []
+          for idx in range(n_input)]
 # vline = [[20. + idx]
 #          if ((idx % shape[1]) == (shape[1] // 2) and
 #              (idx % shape[0]) == (shape[0] // 2))
@@ -49,10 +53,10 @@ src = sim.Population(n_input, sim.SpikeSourceArray,
                      {'spike_times': vline}, label='input spikes')
 
 src1 = sim.Population(n_input, sim.SpikeSourceArray,
-                      {'spike_times': vline}, label='input spikes 1')
+                      {'spike_times': vline1}, label='input spikes 1')
 
 conn = sim.ConvolutionConnector(shape, ws, strides=stride)
-conn1 = sim.ConvolutionConnector(shape, ws*2., strides=stride)
+conn1 = sim.ConvolutionConnector(shape, -ws, strides=stride)
 shape_out = conn.get_post_shape()
 sum_inputs = np.zeros(shape_out)
 hh, hw = k_shape // 2

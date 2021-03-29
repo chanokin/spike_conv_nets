@@ -42,8 +42,8 @@ def generate_kernels(shape, w=1.0):
         'a135': a135
     }
 
-img_name = 'test_img'
-# img_name = 'test_pulse'
+# img_name = 'test_img'
+img_name = 'test_pulse'
 img = cv2.imread('./{}.png'.format(img_name),
                  cv2.IMREAD_GRAYSCALE).astype('float')
 
