@@ -75,7 +75,7 @@ def_params = {
     'v_rest': 0.,
     'v_reset': 0.,
     'v': 0.,
-    'tau_m': 500.#np.round(digit_duration // 2.),
+    'tau_m': 100#0.#np.round(digit_duration // 2.),
 }
 
 for i, o in enumerate(order):
@@ -146,23 +146,32 @@ for k in rec:
 
 projs = {}
 kernels = {}
+dense_weights = {}
 for i, o in enumerate(order):
     if i == 0:
         continue
+    c = ml_conns[o]
+    weights = c['weights']
     o0 = order[i-1]
+    # dense_weights[o] =
     for prei, pre in enumerate(pops[o0]):
         pre_shape = np.asarray(ml_param[o0]['shape'][:2])
-        c = ml_conns[o]
+        if len(pre_shape) == 1:
+            pre_shape = (pre.size, 1)
+            n_chan = 1
+        else:
+            n_chan = ml_param[o0]['shape'][-1]
+
         wl = []
         for posti, post in enumerate(pops[o]):
             lbl = "{}_{} to {}_{}".format(o0, prei, o, posti)
-            print(pre_shape, o0, prei, o, posti)
+            print(pre_shape, n_chan, o0, prei, o, posti)
             if 'conv2d' in o.lower():
 
                 wshape = c['shape']
                 # print(prei, posti, wshape, c['weights'].shape)
                 strides = c['strides']
-                w = c['weights'][:, :, prei, posti].reshape(wshape)
+                w = weights[:, :, prei, posti].reshape(wshape)
                 wl.append(w)
                 pool_area = c['pool']['shape'] if 'pool' in c else None
                 pool_stride = c['pool']['strides'] if 'pool' in c else None
@@ -172,8 +181,7 @@ for i, o in enumerate(order):
                 projs[lbl] = prj
 
             elif 'dense' in o.lower():
-                if len(pre_shape) == 1:
-                    pre_shape = (pre.size, 1)
+
                 n_out = post.size
                 pooling = 'pool' in c
                 pool_area = np.asarray(c['pool']['shape']) if pooling else None
@@ -181,11 +189,22 @@ for i, o in enumerate(order):
                 sh_pre = sim.PoolDenseConnector.calc_post_pool_shape(
                             pre_shape, pooling, pool_area, pool_stride)
                 size_pre = int(np.prod(sh_pre))
-                srw = size_pre * prei
-                erw = srw + size_pre
-                scw = posti * n_out
-                ecw = scw + n_out
-                ws = c['weights'][srw:erw, scw:ecw]
+                pre_rows = np.repeat(np.arange(sh_pre[0]), sh_pre[1])
+                print("pre_rows = {}".format(pre_rows))
+                pre_cols = np.tile(np.arange(sh_pre[1]), sh_pre[0])
+                print("pre_cols = {}".format(pre_cols))
+                mtx_rows = (pre_rows * sh_pre[1] * n_chan +
+                            pre_cols * n_chan + prei)
+                print("mtx_rows = {}".format(mtx_rows))
+                n_rows = len(mtx_rows)
+                mtx_rows = np.repeat(mtx_rows, n_out)
+                print("mtx_rows = {}".format(mtx_rows))
+                mtx_cols = np.tile(np.arange(n_out), n_rows)
+                print("mtx_cols = {}".format(mtx_cols))
+                ws = weights[mtx_rows, mtx_cols].reshape((n_rows, n_out))
+                print(ws.shape)
+                # print(ws)
+                wl.append(ws)
                 cn = sim.PoolDenseConnector(pre_shape, ws, n_out, pool_area,
                                             pool_stride)
 
@@ -237,8 +256,9 @@ for si, k in enumerate(order):
                                                digit_duration // 2)
         nimgs = len(imgs)
         nrows = 3
-        if 'conv2d' in k:
-            nimgs += 1
+        # if 'conv2d' in k:
+        #     nimgs += 1
+        nimgs += 1
 
         ncols = nimgs // nrows + int(nimgs % nrows > 0)
 
@@ -253,7 +273,7 @@ for si, k in enumerate(order):
             ax.set_xticks([])
             ax.set_yticks([])
 
-        if 'conv2d' in k:
+        if 'conv2d' in k or 'dense' in k:
             w = kernels[k][pi]
             vmax = np.max(np.abs(w))
             ax = plt.subplot(nrows, ncols, nimgs)
