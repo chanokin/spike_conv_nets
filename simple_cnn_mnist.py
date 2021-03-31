@@ -41,9 +41,9 @@ np.random.seed(13)
 
 shape_in = np.asarray([28, 28])
 n_in = int(np.prod(shape_in))
-n_digits = 5
+n_digits = 50
 digit_duration = 500.0  # ms
-digit_rate = 5.0  # hz
+digit_rate = 50.0  # hz
 in_rates = np.zeros((n_in, n_digits))
 for i in range(n_digits):
     in_rates[:, i] = test_X[i].flatten()
@@ -75,7 +75,7 @@ def_params = {
     'v_rest': 0.,
     'v_reset': 0.,
     'v': 0.,
-    'tau_m': 100#0.#np.round(digit_duration // 2.),
+    'tau_m': 200.#0.#np.round(digit_duration // 2.),
 }
 
 for i, o in enumerate(order):
@@ -152,6 +152,12 @@ for i, o in enumerate(order):
         continue
     c = ml_conns[o]
     weights = c['weights']
+    pooling = 'pool' in c
+    pool_area = np.asarray(c['pool']['shape']) if pooling else None
+    pool_stride = np.asarray(c['pool']['strides']) if pooling else None
+    wshape = c.get('shape', None)
+    strides = c.get('strides', None)
+
     o0 = order[i-1]
     # dense_weights[o] =
     for prei, pre in enumerate(pops[o0]):
@@ -167,43 +173,48 @@ for i, o in enumerate(order):
             lbl = "{}_{} to {}_{}".format(o0, prei, o, posti)
             print(pre_shape, n_chan, o0, prei, o, posti)
             if 'conv2d' in o.lower():
-
-                wshape = c['shape']
                 # print(prei, posti, wshape, c['weights'].shape)
-                strides = c['strides']
                 w = weights[:, :, prei, posti].reshape(wshape)
                 wl.append(w)
-                pool_area = c['pool']['shape'] if 'pool' in c else None
-                pool_stride = c['pool']['strides'] if 'pool' in c else None
                 cn = sim.ConvolutionConnector(pre_shape, w, strides=strides,
-                                          pooling=pool_area, pool_stride=pool_stride)
+                        pooling=pool_area, pool_stride=pool_stride)
                 prj = sim.Projection(pre, post, cn, label=lbl)
                 projs[lbl] = prj
 
             elif 'dense' in o.lower():
-
                 n_out = post.size
-                pooling = 'pool' in c
-                pool_area = np.asarray(c['pool']['shape']) if pooling else None
-                pool_stride = np.asarray(c['pool']['strides']) if pooling else None
                 sh_pre = sim.PoolDenseConnector.calc_post_pool_shape(
                             pre_shape, pooling, pool_area, pool_stride)
                 size_pre = int(np.prod(sh_pre))
-                pre_rows = np.repeat(np.arange(sh_pre[0]), sh_pre[1])
-                print("pre_rows = {}".format(pre_rows))
-                pre_cols = np.tile(np.arange(sh_pre[1]), sh_pre[0])
-                print("pre_cols = {}".format(pre_cols))
-                mtx_rows = (pre_rows * sh_pre[1] * n_chan +
-                            pre_cols * n_chan + prei)
-                print("mtx_rows = {}".format(mtx_rows))
-                n_rows = len(mtx_rows)
-                mtx_rows = np.repeat(mtx_rows, n_out)
-                print("mtx_rows = {}".format(mtx_rows))
-                mtx_cols = np.tile(np.arange(n_out), n_rows)
-                print("mtx_cols = {}".format(mtx_cols))
-                ws = weights[mtx_rows, mtx_cols].reshape((n_rows, n_out))
-                print(ws.shape)
-                # print(ws)
+                if 'conv2d' in o0.lower():
+                    col0 = posti * n_out
+                    col1 = col0 + n_out
+
+                    pre_rows = np.repeat(np.arange(sh_pre[0]), sh_pre[1])
+                    # print("pre_rows = {}".format(pre_rows))
+                    pre_cols = np.tile(np.arange(sh_pre[1]), sh_pre[0])
+                    # print("pre_cols = {}".format(pre_cols))
+                    mtx_rows = (pre_rows * sh_pre[1] * n_chan +
+                                pre_cols * n_chan + prei)
+                    print("mtx_rows = {}".format(mtx_rows))
+                    n_rows = len(mtx_rows)
+                    mtx_rows = np.repeat(mtx_rows, n_out)
+                    # print("mtx_rows = {}".format(mtx_rows))
+                    mtx_cols = np.arange(col0, col1)
+                    print("mtx_cols = {}".format(mtx_cols))
+                    mtx_cols = np.tile(mtx_cols, n_rows)
+                    # print("mtx_cols = {}".format(mtx_cols))
+                    ws = weights[mtx_rows, mtx_cols].reshape((n_rows, n_out))
+                    print(ws.shape)
+                    # print(ws)
+                    # row0 = prei * size_pre
+                    # row1 = row0 + size_pre
+                    # ws = weights[row0:row1, col0:col1]
+
+                else:
+                    row0 = prei * size_pre
+                    row1 = row0 + size_pre
+                    ws = weights[row0:row1, :]
                 wl.append(ws)
                 cn = sim.PoolDenseConnector(pre_shape, ws, n_out, pool_area,
                                             pool_stride)
@@ -234,7 +245,7 @@ for si, k in enumerate(order):
     if k == 'dense':
         imgs, bins = plotting.spikes_to_images_list(
                                   spikes[k], shapes[k], sim_time,
-                                  digit_duration // 2, offsets[k],
+                                  digit_duration, offsets[k],
                                   merge_images=True)
         nrows = 3
         nimgs = len(imgs)
@@ -247,13 +258,13 @@ for si, k in enumerate(order):
             ax.imshow(imgs[i])
             ax.set_xticks([])
             ax.set_yticks([])
-        plt.savefig("{:03d}_{}_{:03d}.pdf".format(si, k, 0))
+        plt.savefig("{:03d}_{}_{:03d}.png".format(si, k, 0), dpi=150)
         plt.close(fig)
         continue
 
     for pi, p in enumerate(spikes[k]):
         imgs, bins = plotting.spikes_to_images(p, shapes[k], sim_time,
-                                               digit_duration // 2)
+                                               digit_duration)
         nimgs = len(imgs)
         nrows = 3
         # if 'conv2d' in k:
@@ -269,6 +280,8 @@ for si, k in enumerate(order):
                 break
 
             ax = plt.subplot(nrows, ncols, i + 1)
+            if k == 'dense_2':
+                ax.set_title("{} - {}".format(test_y[i], np.argmax(imgs[i])))
             ax.imshow(imgs[i])
             ax.set_xticks([])
             ax.set_yticks([])
@@ -284,7 +297,7 @@ for si, k in enumerate(order):
 
 
 
-        plt.savefig("{:03d}_{}_{:03d}.png".format(si, k, pi))
+        plt.savefig("{:03d}_{}_{:03d}.png".format(si, k, pi), dpi=150)
         plt.close(fig)
 # plt.show()
 
