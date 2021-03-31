@@ -89,6 +89,9 @@ for k in kernels:
 # if VISUALIZE:
 #     plt.show()
 
+import sys
+sys.exit()
+
 # sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
 sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=2048)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=1024)
