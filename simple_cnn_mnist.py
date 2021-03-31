@@ -41,15 +41,15 @@ np.random.seed(13)
 
 shape_in = np.asarray([28, 28])
 n_in = int(np.prod(shape_in))
-n_digits = 50
+n_digits = 100
 digit_duration = 500.0  # ms
-digit_rate = 50.0  # hz
+digit_rate = 100.0  # hz
 in_rates = np.zeros((n_in, n_digits))
 for i in range(n_digits):
     in_rates[:, i] = test_X[i].flatten()
 
 in_rates *= (digit_rate / in_rates.max())
-in_durations = np.ones((n_in, n_digits)) * digit_duration
+in_durations = np.ones((n_in, n_digits)) * np.round(digit_duration * 0.8)
 in_starts = np.repeat([np.arange(n_digits) * digit_duration],
                       n_in, axis=0)
 in_params = {
@@ -75,7 +75,7 @@ def_params = {
     'v_rest': 0.,
     'v_reset': 0.,
     'v': 0.,
-    'tau_m': 200.#0.#np.round(digit_duration // 2.),
+    'tau_m': 100.#0.#np.round(digit_duration // 2.),
 }
 
 for i, o in enumerate(order):
@@ -118,10 +118,10 @@ for i, o in enumerate(order):
 
 rec = [
     'input',
-    'conv2d',
-    'conv2d_1',
-    'dense',
-    'dense_1',
+    # 'conv2d',
+    # 'conv2d_1',
+    # 'dense',
+    # 'dense_1',
     'dense_2',
 ]
 shapes = {
@@ -238,6 +238,9 @@ sim.end()
 
 # sys.exit()
 
+conf_matrix = np.zeros((10, 10))
+correct = 0
+no_spikes = 0
 for si, k in enumerate(order):
     if k not in spikes:
         continue
@@ -281,7 +284,15 @@ for si, k in enumerate(order):
 
             ax = plt.subplot(nrows, ncols, i + 1)
             if k == 'dense_2':
-                ax.set_title("{} - {}".format(test_y[i], np.argmax(imgs[i])))
+                if np.sum(imgs[i]) == 0:
+                    no_spikes += 1
+                else:
+                    pred = np.argmax(imgs[i])
+                    corr = test_y[i]
+                    if pred == corr:
+                        correct += 1
+                    conf_matrix[corr, pred] += 1
+                    ax.set_title("{} - {}".format(test_y[i], np.argmax(imgs[i])))
             ax.imshow(imgs[i])
             ax.set_xticks([])
             ax.set_yticks([])
@@ -295,10 +306,15 @@ for si, k in enumerate(order):
             ax.set_yticks([])
             plt.colorbar(im)
 
-
-
         plt.savefig("{:03d}_{}_{:03d}.png".format(si, k, pi), dpi=150)
         plt.close(fig)
+
+
+plt.figure()
+plt.suptitle("confusion matrix ({})\n no spikes {} acc {:5.2f}%".format(
+                n_digits, no_spikes, (100. * correct)/n_digits))
+plt.imshow(conf_matrix)
+plt.savefig("confusion_matrix.pdf")
 # plt.show()
 
 
