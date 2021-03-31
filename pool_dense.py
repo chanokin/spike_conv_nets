@@ -61,9 +61,14 @@ k_shape = np.asarray(
     (int(np.prod(pool_shape)), n_out),
     dtype='int')
 
-ws = np.arange(int(np.prod(k_shape))).reshape(k_shape)
+div = 1. / np.prod(pooling_stride)
+ws = np.arange(int(np.prod(k_shape))).reshape(k_shape) * 0.01
+print()
+print(np.max(ws))
+print(np.max(ws * div))
+print()
 conn = sim.PoolDenseConnector(shape, ws, n_out, pooling, pooling_stride)
-conn1 = sim.PoolDenseConnector(shape, ws, n_out, pooling, pooling_stride)
+conn1 = sim.PoolDenseConnector(shape, ws * -1.0, n_out, pooling, pooling_stride)
 
 
 post_cfg = {
@@ -78,7 +83,7 @@ dst.record(['v', 'spikes'])
 # syn = sim.StaticSynapse(weight=ws.flatten)
 
 prj = sim.Projection(src, dst, conn)
-prj1 = sim.Projection(src1, dst, conn)
+prj1 = sim.Projection(src1, dst, conn1)
 
 sim.run(run_time)
 
