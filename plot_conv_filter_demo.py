@@ -137,7 +137,16 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
             # pos.x0 -= dx
             # ax.set_position([pos.x0, pos.y0,
             #                  pos.width, pos.height])
+            if np.any(out_imgs[k]):
+                import sys
+                print(k)
+                for r in out_imgs[k]:
+                    for v in r:
+                        sys.stdout.write("{:.6f}\t".format(v))
+                    sys.stdout.write("\n")
+                sys.stdout.write("\n")
 
+                # print(out_imgs[k])
             im = ax.imshow(out_imgs[k], cmap=cmap, vmin=vmin, vmax=vmax,
                            alpha=0.4)
             ax.set_xticks([])
