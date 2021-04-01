@@ -41,9 +41,9 @@ np.random.seed(13)
 
 shape_in = np.asarray([28, 28])
 n_in = int(np.prod(shape_in))
-n_digits = 100
+n_digits = 10#0
 digit_duration = 500.0  # ms
-digit_rate = 100.0  # hz
+digit_rate = 20.0  # hz
 in_rates = np.zeros((n_in, n_digits))
 for i in range(n_digits):
     in_rates[:, i] = test_X[i].flatten()
@@ -75,7 +75,7 @@ def_params = {
     'v_rest': 0.,
     'v_reset': 0.,
     'v': 0.,
-    'tau_m': 100.#0.#np.round(digit_duration // 2.),
+    'tau_m': 250.#0.#np.round(digit_duration // 2.),
 }
 
 for i, o in enumerate(order):
@@ -317,6 +317,23 @@ plt.imshow(conf_matrix)
 plt.savefig("confusion_matrix.pdf")
 # plt.show()
 
+for si, k in enumerate(order):
+    if k not in spikes:
+        continue
 
+    for pi, p in enumerate(spikes[k]):
+        fig = plt.figure()
+        plt.suptitle("{}_{}".format(k, pi))
+        ax = plt.subplot(1, 1, 1)
+        if k == 'dense_2':
+            for i in range(10):
+                plt.axhline(i, linestyle='--', color='gray')
 
+        for i in np.arange(0, sim_time, digit_duration):
+            plt.axvline(i, linestyle='--', color='gray', linewidth=0.5)
+
+        for ni, ts in enumerate(p):
+            ax.plot(ts, ni * np.ones_like(ts), '.b', markersize=1)
+        plt.savefig("spikes_{:03d}_{}_{:03d}.png".format(si, k, pi), dpi=150)
+        plt.close(fig)
 
