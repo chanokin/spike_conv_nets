@@ -352,4 +352,25 @@ for i, k in enumerate(rates):
     plt.savefig('average_rates_simple_cnn_mnist_layer_{}.pdf'.format(k))
 plt.show()
 
+for si, k in enumerate(order):
+    if k not in spikes:
+        continue
+
+    for pi, p in enumerate(spikes[k]):
+        fig = plt.figure()
+        plt.suptitle("{}_{}".format(k, pi))
+        ax = plt.subplot(1, 1, 1)
+        if k == 'dense_2':
+            for i in range(10):
+                plt.axhline(i, linestyle='--', color='gray')
+
+        for i in np.arange(0, sim_time, digit_duration):
+            plt.axvline(i, linestyle='--', color='gray', linewidth=0.5)
+
+        for ni, ts in enumerate(p):
+            ax.plot(ts, ni * np.ones_like(ts), '.b', markersize=1)
+        plt.savefig("spikes_{:03d}_{}_{:03d}.png".format(si, k, pi), dpi=150)
+        plt.close(fig)
+
+
 
