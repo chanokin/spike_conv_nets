@@ -41,15 +41,15 @@ np.random.seed(13)
 
 shape_in = np.asarray([28, 28])
 n_in = int(np.prod(shape_in))
-n_digits = 100
+n_digits = 50#0
 digit_duration = 500.0  # ms
-digit_rate = 100.0  # hz
+digit_rate = 10.0  # hz
 in_rates = np.zeros((n_in, n_digits))
 for i in range(n_digits):
     in_rates[:, i] = test_X[i].flatten()
 
 in_rates *= (digit_rate / in_rates.max())
-in_durations = np.ones((n_in, n_digits)) * np.round(digit_duration * 0.8)
+in_durations = np.ones((n_in, n_digits)) * np.round(digit_duration * 0.5)
 in_starts = np.repeat([np.arange(n_digits) * digit_duration],
                       n_in, axis=0)
 in_params = {
@@ -66,7 +66,7 @@ pops = {
         additional_parameters={'seed': 24534}
     )]
 }
-
+sizes = {'input': [p.size for p in pops['input']]}
 
 # ------------------------------------------------------------------- #
 # ------------------------------------------------------------------- #
@@ -75,7 +75,7 @@ def_params = {
     'v_rest': 0.,
     'v_reset': 0.,
     'v': 0.,
-    'tau_m': 100.#0.#np.round(digit_duration // 2.),
+    'tau_m': 200.#0.#np.round(digit_duration // 2.),
 }
 
 for i, o in enumerate(order):
@@ -94,6 +94,7 @@ for i, o in enumerate(order):
         pop = [sim.Population(n, sim.IF_curr_exp_conv, ps,
                               label="{}_chan_{}".format(o, ch))
                for ch in range(chans)]
+
         for p in pop:
             p.set(v=v)
     elif 'dense' in o.lower():
@@ -114,14 +115,15 @@ for i, o in enumerate(order):
         for p in pop:
             p.set(v=v)
 
+    sizes[o] = [p.size for p in pop]
     pops[o] = pop
 
 rec = [
     'input',
-    # 'conv2d',
-    # 'conv2d_1',
-    # 'dense',
-    # 'dense_1',
+    'conv2d',
+    'conv2d_1',
+    'dense',
+    'dense_1',
     'dense_2',
 ]
 shapes = {
@@ -223,7 +225,7 @@ for i, o in enumerate(order):
                 projs[lbl] = prj
         kernels[o] = wl
 
-sim_time = digit_duration * n_digits * 1.1
+sim_time = digit_duration * (n_digits + 0.1)
 
 neos = {}
 spikes = {}
@@ -236,8 +238,8 @@ for k in rec:
 
 sim.end()
 
-# sys.exit()
 
+rates = {}
 conf_matrix = np.zeros((10, 10))
 correct = 0
 no_spikes = 0
@@ -250,6 +252,10 @@ for si, k in enumerate(order):
                                   spikes[k], shapes[k], sim_time,
                                   digit_duration, offsets[k],
                                   merge_images=True)
+        # rates[k] = bins
+        rates[k] = [[np.mean([len(ts) for ts in b])
+                    for b in pbins] for pbins in bins]
+
         nrows = 3
         nimgs = len(imgs)
         ncols = nimgs // nrows + int(nimgs % nrows > 0)
@@ -265,9 +271,12 @@ for si, k in enumerate(order):
         plt.close(fig)
         continue
 
+    rl = []
     for pi, p in enumerate(spikes[k]):
         imgs, bins = plotting.spikes_to_images(p, shapes[k], sim_time,
                                                digit_duration)
+        rl.append([np.mean([len(ts) for ts in b]) for b in bins])
+
         nimgs = len(imgs)
         nrows = 3
         # if 'conv2d' in k:
@@ -293,6 +302,7 @@ for si, k in enumerate(order):
                         correct += 1
                     conf_matrix[corr, pred] += 1
                     ax.set_title("{} - {}".format(test_y[i], np.argmax(imgs[i])))
+
             ax.imshow(imgs[i])
             ax.set_xticks([])
             ax.set_yticks([])
@@ -309,6 +319,7 @@ for si, k in enumerate(order):
         plt.savefig("{:03d}_{}_{:03d}.png".format(si, k, pi), dpi=150)
         plt.close(fig)
 
+    rates[k] = rl
 
 plt.figure()
 plt.suptitle("confusion matrix ({})\n no spikes {} acc {:5.2f}%".format(
@@ -318,5 +329,27 @@ plt.savefig("confusion_matrix.pdf")
 # plt.show()
 
 
+colors = ['red', 'green', 'blue', 'cyan', 'orange',
+          'magenta', 'black', 'yellow', ]
+for i, k in enumerate(rates):
+    if k == 'input':
+        continue
+    # max_r = np.max(rates[k])
+    fig = plt.figure()
+    ax = plt.subplot(1, 1, 1)
+
+    for j, r in enumerate(rates[k]):
+
+        lbl = "{} {}".format(k, j) if j == 0 else None
+        plt.plot(r[:-1], color=colors[i], label=lbl, linewidth=1)
+
+    plt.plot(rates['input'][0][:-1], linestyle=':', color=colors[0],
+             label='Input', linewidth=4)
+
+
+# plt.legend()
+    plt.legend(bbox_to_anchor=(1.01, 1), loc='upper left')
+    plt.savefig('average_rates_simple_cnn_mnist_layer_{}.pdf'.format(k))
+plt.show()
 
 

@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 def spikes_to_bins(spikes, max_t, t_bin):
     tbins = np.arange(0, max_t, t_bin)
     sbins = [[[] for _ in spikes] for _ in tbins]
@@ -11,6 +12,7 @@ def spikes_to_bins(spikes, max_t, t_bin):
                 sbins[bidx-1][nidx].append(spks[sidx])
 
     return sbins
+
 
 def __plot_binned_spikes(binned, shape, offset_row):
     images = []
@@ -31,9 +33,11 @@ def __plot_binned_spikes(binned, shape, offset_row):
     print("\n\n\nmax_index found for spikes {}\n\n".format(max_idx))
     return images
 
+
 def spikes_to_images(spikes, shape, max_t, t_bin):
     imgs, bins = spikes_to_images_list([spikes], shape, max_t, t_bin, 0, False)
     return imgs[0], bins[0]
+
 
 def spikes_to_images_list(spikes_list, shape, max_t, t_bin, offset_row,
                           merge_images=False):
