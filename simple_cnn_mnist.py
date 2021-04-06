@@ -41,7 +41,7 @@ np.random.seed(13)
 
 shape_in = np.asarray([28, 28])
 n_in = int(np.prod(shape_in))
-n_digits = 50#0
+n_digits = 1#0#0
 digit_duration = 500.0  # ms
 digit_rate = 10.0  # hz
 in_rates = np.zeros((n_in, n_digits))
