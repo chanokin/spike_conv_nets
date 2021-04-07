@@ -6,15 +6,19 @@ import matplotlib.pyplot as plt
 np.random.seed(13)
 
 # sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=12)
-n_sources = 5
-rate = 25
+n_sources = 8
+# rate = 200
 shape = np.array([15, 15], dtype='int32')  # h, w
 n_input = int(np.prod(shape, dtype='int32'))
 stride = np.array([1, 1], dtype='int32')  # h, w
 k_shape = np.array([5, 5], dtype='int32')
 # vline = [[20.+np.random.randint(-2, 3)]
+# vline = [[20.]
+#          if (idx % shape[1]) == (shape[1] // 2) else []
+#          for idx in range(n_input)]
+n_in_spikes = 225
 vline = [[20.]
-         if (idx % shape[1]) == (shape[1] // 2) or idx == 13 else []
+         if idx < n_in_spikes else []
          for idx in range(n_input)]
 
 wmax = 5.0
@@ -34,18 +38,22 @@ print(np.sum(ws))
 # print(np.sum(ws))
 # print(ws)
 
-
-
-run_time = 500.
+run_time = 50.
 
 sim.setup(timestep=1.)
 
-src = [sim.Population(n_input, sim.SpikeSourcePoisson,
-                     {'rate': rate},
+src = [sim.Population(n_input, sim.SpikeSourceArray,
+                     {'spike_times': vline},
                       label='input spikes {}'.format(i))
        for i in range(n_sources)]
 for s in src:
     s.record('spikes')
+# src = [sim.Population(n_input, sim.SpikeSourcePoisson,
+#                      {'rate': rate},
+#                       label='input spikes {}'.format(i))
+#        for i in range(n_sources)]
+# for s in src:
+#     s.record('spikes')
 
 conn = sim.ConvolutionConnector(shape, ws, strides=stride)
 shape_out = conn.get_post_shape()
