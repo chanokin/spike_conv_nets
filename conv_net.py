@@ -6,29 +6,20 @@ import matplotlib.pyplot as plt
 np.random.seed(13)
 
 # sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=12)
-
-shape = np.array([5, 5], dtype='int32')  # h, w
+n_sources = 5
+rate = 25
+shape = np.array([15, 15], dtype='int32')  # h, w
 n_input = int(np.prod(shape, dtype='int32'))
 stride = np.array([1, 1], dtype='int32')  # h, w
-k_shape = np.array([3, 3], dtype='int32')
+k_shape = np.array([5, 5], dtype='int32')
 # vline = [[20.+np.random.randint(-2, 3)]
 vline = [[20.]
          if (idx % shape[1]) == (shape[1] // 2) or idx == 13 else []
          for idx in range(n_input)]
 
-vline1 = [[10.]
-          if (idx % shape[1]) == (shape[1] // 2) or idx == 13 else []
-          for idx in range(n_input)]
-# vline = [[20. + idx]
-#          if ((idx % shape[1]) == (shape[1] // 2) and
-#              (idx % shape[0]) == (shape[0] // 2))
-#          else []
-#          for idx in range(n_input)]
-
-
 wmax = 5.0
 # ws = np.random.uniform(-wmax, wmax, k_shape)
-ws = np.arange(np.prod(k_shape)).reshape(k_shape) * 0.25 - 2.5
+ws = (np.arange(np.prod(k_shape)).reshape(k_shape) * 0.25 - 2.5) * 0.1
 # ws = np.arange(np.prod(k_shape), dtype='float').reshape(k_shape)
 # ws[:, k_shape[1]//2] = np.arange(k_shape[1]) + 2.
 # ws[:, k_shape[1]//2] *= -0.8
@@ -45,18 +36,18 @@ print(np.sum(ws))
 
 
 
-run_time = 60.
+run_time = 500.
 
 sim.setup(timestep=1.)
 
-src = sim.Population(n_input, sim.SpikeSourceArray,
-                     {'spike_times': vline}, label='input spikes')
-
-src1 = sim.Population(n_input, sim.SpikeSourceArray,
-                      {'spike_times': vline1}, label='input spikes 1')
+src = [sim.Population(n_input, sim.SpikeSourcePoisson,
+                     {'rate': rate},
+                      label='input spikes {}'.format(i))
+       for i in range(n_sources)]
+for s in src:
+    s.record('spikes')
 
 conn = sim.ConvolutionConnector(shape, ws, strides=stride)
-conn1 = sim.ConvolutionConnector(shape, -ws, strides=stride)
 shape_out = conn.get_post_shape()
 sum_inputs = np.zeros(shape_out)
 hh, hw = k_shape // 2
@@ -94,8 +85,7 @@ dst = sim.Population(
 dst.record('spikes')
 # syn = sim.StaticSynapse(weight=ws.flatten)
 
-prj = sim.Projection(src, dst, conn)
-prj1 = sim.Projection(src1, dst, conn1)
+prj = [sim.Projection(src[i], dst, conn) for i in range(n_sources)]
 
 sim.run(run_time)
 
@@ -103,28 +93,26 @@ neo = dst.get_data()
 # v = neo.segments[0].filter(name='v')[0]
 spikes = neo.segments[0].spiketrains
 # print(v)
-print(spikes)
+# print(spikes)
+
+in_neos = [p.get_data() for p in src]
+in_spikes = [n.segments[0].spiketrains for n in in_neos]
 
 sim.end()
 
-# sum_inputs += post_cfg['v_rest']
-# maxv = max(post_cfg['v_thresh']*0.9, np.max(sum_inputs))
-# color = ['red', 'blue', 'green', 'orange']
-#
-# plt.figure()
-# plt.axhspan(post_cfg['v_thresh'], maxv, color='gray', alpha=0.3)
-# plt.axhline(post_cfg['v_reset'], color='gray', linestyle=':')
-# for i, w in enumerate(sum_inputs.flatten()):
-#     plt.axhline(w, linestyle='--')#, color=color[i])
-#
-# for i, vv in enumerate(v.T):
-#     plt.plot(vv, label=i)#, color=color[i])
-#
-# for i, spks in enumerate(spikes):
-#     for t in spks:
-#         plt.axvline(float(t), linestyle=':')#, color=color[i])
-#
-# plt.legend()
-#
-# plt.show()
-#
+colors = ['red', 'green', 'blue', 'cyan', 'orange',
+          'magenta', 'black', 'yellow', ]
+fig = plt.figure(figsize=(16, 4))
+ax = plt.subplot(1, 2, 1)
+for i, s in enumerate(in_spikes):
+    for j, ts in enumerate(s):
+        ts = np.asarray([t for t in ts])
+        ax.plot(ts + 0.1 * i, j * np.ones_like(ts), '.',
+                markersize=1., color=colors[i], alpha=0.5)
+
+ax = plt.subplot(1, 2, 2)
+for j, ts in enumerate(spikes):
+    ax.plot(ts, j * np.ones_like(ts), '.k',
+            markersize=1.)
+
+plt.show()

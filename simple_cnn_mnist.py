@@ -41,9 +41,9 @@ np.random.seed(13)
 
 shape_in = np.asarray([28, 28])
 n_in = int(np.prod(shape_in))
-n_digits = 1#0#0
+n_digits = 10#0#0
 digit_duration = 500.0  # ms
-digit_rate = 10.0  # hz
+digit_rate = 20.0  # hz
 in_rates = np.zeros((n_in, n_digits))
 for i in range(n_digits):
     in_rates[:, i] = test_X[i].flatten()
@@ -340,8 +340,8 @@ for i, k in enumerate(rates):
 
     for j, r in enumerate(rates[k]):
 
-        lbl = "{} {}".format(k, j) if j == 0 else None
-        plt.plot(r[:-1], color=colors[i], label=lbl, linewidth=1)
+        lbl = "{} {}".format(k, j)
+        plt.plot(r[:-1], label=lbl, linewidth=1)
 
     plt.plot(rates['input'][0][:-1], linestyle=':', color=colors[0],
              label='Input', linewidth=4)
