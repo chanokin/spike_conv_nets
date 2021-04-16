@@ -16,7 +16,7 @@ k_shape = np.array([5, 5], dtype='int32')
 # vline = [[20.]
 #          if (idx % shape[1]) == (shape[1] // 2) else []
 #          for idx in range(n_input)]
-n_in_spikes = 225
+n_in_spikes = 40
 vline = [[20.]
          if idx < n_in_spikes else []
          for idx in range(n_input)]
