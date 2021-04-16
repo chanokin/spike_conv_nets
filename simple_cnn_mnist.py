@@ -8,6 +8,13 @@ import sys
 filename = "simple_cnn_network_elements.npz"
 
 data = np.load(filename, allow_pickle=True)
+thresholds = dict(
+    conv2d=1,#3.1836495399475098,
+    conv2d_1=1,#2.9346282482147217,
+    dense=1,#1.1361589431762695,
+    dense_1=1,#2.435835599899292,
+    dense_2=1,#2.36885929107666,
+)
 
 order0 = data['order']
 order = order0[:]
@@ -41,9 +48,9 @@ np.random.seed(13)
 
 shape_in = np.asarray([28, 28])
 n_in = int(np.prod(shape_in))
-n_digits = 10#0
+n_digits = 5#0
 digit_duration = 1000.0  # ms
-digit_rate = 20.0  # hz
+digit_rate = 100.0  # hz
 in_rates = np.zeros((n_in, n_digits))
 for i in range(n_digits):
     in_rates[:, i] = test_X[i].flatten()
@@ -88,7 +95,8 @@ for i, o in enumerate(order):
         chans = par['shape'][2]
         ps = def_params.copy()
         v = ps.pop('v')
-        ps['v_thresh'] = par['threshold']
+        ps['v_thresh'] = thresholds[o]
+        # ps['v_thresh'] = par['threshold']
         n = int(np.prod(shape))
         print(o, n, shape, chans)
         pop = [sim.Population(n, sim.IF_curr_exp_conv, ps,
@@ -101,7 +109,7 @@ for i, o in enumerate(order):
         shape = par['shape'][0:2]
         ps = def_params.copy()
         v = ps.pop('v')
-        ps['v_thresh'] = par['threshold']
+        ps['v_thresh'] = thresholds[o]
 
         n = int(np.prod(shape))
         chans = 1
@@ -149,6 +157,18 @@ for k in rec:
 projs = {}
 kernels = {}
 dense_weights = {}
+
+def norm_w(w, is_conv=False):
+    # pos = w[w > 0]
+    # pos /= np.sum(pos)
+    # neg = w[w < 0]
+    # neg /= (-np.sum(neg))
+    # new_w = w.copy()
+    # new_w[w > 0] = pos
+    # new_w[w < 0] = neg
+    # return new_w
+    return w
+
 for i, o in enumerate(order):
     if i == 0:
         continue
@@ -176,7 +196,7 @@ for i, o in enumerate(order):
             print(pre_shape, n_chan, o0, prei, o, posti)
             if 'conv2d' in o.lower():
                 # print(prei, posti, wshape, c['weights'].shape)
-                w = weights[:, :, prei, posti].reshape(wshape)
+                w = norm_w(weights[:, :, prei, posti].reshape(wshape))
                 wl.append(w)
                 cn = sim.ConvolutionConnector(pre_shape, w, strides=strides,
                         pooling=pool_area, pool_stride=pool_stride)
@@ -206,7 +226,7 @@ for i, o in enumerate(order):
                     print("mtx_cols = {}".format(mtx_cols))
                     mtx_cols = np.tile(mtx_cols, n_rows)
                     # print("mtx_cols = {}".format(mtx_cols))
-                    ws = weights[mtx_rows, mtx_cols].reshape((n_rows, n_out))
+                    ws = norm_w(weights[mtx_rows, mtx_cols].reshape((n_rows, n_out)))
                     print(ws.shape)
                     # print(ws)
                     # row0 = prei * size_pre
@@ -216,7 +236,7 @@ for i, o in enumerate(order):
                 else:
                     row0 = prei * size_pre
                     row1 = row0 + size_pre
-                    ws = weights[row0:row1, :]
+                    ws = norm_w(weights[row0:row1, :])
                 wl.append(ws)
                 cn = sim.PoolDenseConnector(pre_shape, ws, n_out, pool_area,
                                             pool_stride)
@@ -350,7 +370,25 @@ for i, k in enumerate(rates):
 # plt.legend()
     plt.legend(bbox_to_anchor=(1.01, 1), loc='upper left')
     plt.savefig('average_rates_simple_cnn_mnist_layer_{}.pdf'.format(k))
-plt.show()
+
+ord = order
+mean_rates = [np.mean(rates[rk]) for rk in ord if rk in rates]
+std_rates = [np.std(rates[rk]) for rk in ord if rk in rates]
+labels = [k for k in ord if k in rates]
+xticks = np.arange(len(mean_rates))
+fig, ax = plt.subplots(1, 1)
+ax.set_title("average rates per layer")
+im = plt.errorbar(xticks, mean_rates, yerr=std_rates,
+                  linestyle='dotted', marker='o')
+ax.set_ylabel("rate (hz)")
+ax.set_xticks(xticks)
+ax.set_xticklabels(labels)
+plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+         rotation_mode="anchor")
+# ax.set_xticklabels(labels)
+plt.savefig("average_spikes_per_layer.png", dpi=300)
+# plt.show()
+
 
 for si, k in enumerate(order):
     if k not in spikes:
@@ -372,5 +410,6 @@ for si, k in enumerate(order):
         plt.savefig("spikes_{:03d}_{}_{:03d}.png".format(si, k, pi), dpi=300)
         plt.close(fig)
 
+# plt.show()
 
 
