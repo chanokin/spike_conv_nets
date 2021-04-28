@@ -9,11 +9,11 @@ filename = "simple_cnn_network_elements.npz"
 
 data = np.load(filename, allow_pickle=True)
 thresholds = dict(
-    conv2d=1,#3.1836495399475098,
-    conv2d_1=1,#2.9346282482147217,
-    dense=1,#1.1361589431762695,
-    dense_1=1,#2.435835599899292,
-    dense_2=1,#2.36885929107666,
+    conv2d=3.1836495399475098,
+    conv2d_1=2.9346282482147217,
+    dense=1.1361589431762695,
+    dense_1=2.435835599899292,
+    dense_2=2.36885929107666,
 )
 
 order0 = data['order']
@@ -48,7 +48,7 @@ np.random.seed(13)
 
 shape_in = np.asarray([28, 28])
 n_in = int(np.prod(shape_in))
-n_digits = 5#0
+n_digits = 10#0
 digit_duration = 1000.0  # ms
 digit_rate = 100.0  # hz
 in_rates = np.zeros((n_in, n_digits))
@@ -82,7 +82,8 @@ def_params = {
     'v_rest': 0.,
     'v_reset': 0.,
     'v': 0.,
-    'tau_m': 300.#0.#np.round(digit_duration // 2.),
+    'tau_m': 10.,
+    'cm': 0.3,
 }
 
 for i, o in enumerate(order):
@@ -134,6 +135,7 @@ rec = [
     'dense_1',
     'dense_2',
 ]
+
 shapes = {
     'input': [28, 28],
     'conv2d': [24, 24],
@@ -142,6 +144,7 @@ shapes = {
     'dense_1': [8, 8],
     'dense_2': [4, 4],
 }
+
 offsets = {
     'input': 0,
     'conv2d': 0,
@@ -150,6 +153,8 @@ offsets = {
     'dense_1': 0,
     'dense_2': 0,
 }
+
+
 for k in rec:
     for p in pops[k][:]:
         p.record('spikes')
@@ -263,6 +268,7 @@ rates = {}
 conf_matrix = np.zeros((10, 10))
 correct = 0
 no_spikes = 0
+ncols = 5
 for si, k in enumerate(order):
     if k not in spikes:
         continue
@@ -276,9 +282,8 @@ for si, k in enumerate(order):
         rates[k] = [[np.mean([len(ts) for ts in b])
                     for b in pbins] for pbins in bins]
 
-        nrows = 3
         nimgs = len(imgs)
-        ncols = nimgs // nrows + int(nimgs % nrows > 0)
+        nrows = nimgs // ncols + int(nimgs % ncols > 0)
 
         fig = plt.figure(figsize=(ncols, nrows))
         plt.suptitle("{}_{}".format(k, 0))
@@ -298,12 +303,11 @@ for si, k in enumerate(order):
         rl.append([np.mean([len(ts) for ts in b]) for b in bins])
 
         nimgs = len(imgs)
-        nrows = 3
         # if 'conv2d' in k:
         #     nimgs += 1
         nimgs += 1
 
-        ncols = nimgs // nrows + int(nimgs % nrows > 0)
+        nrows = nimgs // ncols + int(nimgs % ncols > 0)
 
         fig = plt.figure(figsize=(ncols, nrows))
         plt.suptitle("{}_{}".format(k, pi))
