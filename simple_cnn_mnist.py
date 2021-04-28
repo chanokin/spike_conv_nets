@@ -82,7 +82,8 @@ def_params = {
     'v_rest': 0.,
     'v_reset': 0.,
     'v': 0.,
-    'tau_m': 10.#300.#0.#np.round(digit_duration // 2.),
+    'tau_m': 10.,
+    'cm': 0.5
 }
 
 for i, o in enumerate(order):
@@ -95,8 +96,7 @@ for i, o in enumerate(order):
         chans = par['shape'][2]
         ps = def_params.copy()
         v = ps.pop('v')
-        ps['v_thresh'] = thresholds[o]
-        # ps['v_thresh'] = par['threshold']
+        ps['v_thresh'] = thresholds[o] if bool(0) else par['threshold']
         n = int(np.prod(shape))
         print(o, n, shape, chans)
         pop = [sim.Population(n, sim.IF_curr_exp_conv, ps,
@@ -209,16 +209,25 @@ for i, o in enumerate(order):
                             pre_shape, pooling, pool_area, pool_stride)
                 size_pre = int(np.prod(sh_pre))
                 if 'conv2d' in o0.lower():
+                    cnv = pops[o0]
                     col0 = posti * n_out
                     col1 = col0 + n_out
 
+                    mtx_rows = []
+                    chan = prei
+                    for r in np.arange(sh_pre[0]):
+                        for c in np.arange(sh_pre[1]):
+                            mtx_rows.append(r * sh_pre[1] * len(pops[o0]) +
+                                            c * len(pops[o0]) + chan)
+                    mtx_rows = np.asarray(mtx_rows)
                     pre_rows = np.repeat(np.arange(sh_pre[0]), sh_pre[1])
                     # print("pre_rows = {}".format(pre_rows))
                     pre_cols = np.tile(np.arange(sh_pre[1]), sh_pre[0])
                     # print("pre_cols = {}".format(pre_cols))
-                    mtx_rows = (pre_rows * sh_pre[1] * n_chan +
-                                pre_cols * n_chan + prei)
+                    mtx_rows0 = (pre_rows * sh_pre[1] * n_chan +
+                                 pre_cols * n_chan + prei)
                     print("mtx_rows = {}".format(mtx_rows))
+                    print(np.all(mtx_rows == mtx_rows0))
                     n_rows = len(mtx_rows)
                     mtx_rows = np.repeat(mtx_rows, n_out)
                     # print("mtx_rows = {}".format(mtx_rows))
