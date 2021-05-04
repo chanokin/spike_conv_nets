@@ -82,8 +82,8 @@ def_params = {
     'v_rest': 0.,
     'v_reset': 0.,
     'v': 0.,
-    'tau_m': 10.,
-    'cm': 0.3,
+    'tau_m': 20.,
+    'cm': 0.333,
 }
 
 for i, o in enumerate(order):
@@ -161,16 +161,21 @@ projs = {}
 kernels = {}
 dense_weights = {}
 
+
 def norm_w(w, is_conv=False):
-    # pos = w[w > 0]
-    # pos /= np.sum(pos)
-    # neg = w[w < 0]
-    # neg /= (-np.sum(neg))
-    # new_w = w.copy()
-    # new_w[w > 0] = pos
-    # new_w[w < 0] = neg
-    # return new_w
-    return w
+    new_w = w.copy()
+    pos = w[w > 0]
+    pos /= np.sum(pos)
+    neg = w[w < 0]
+    neg /= (-np.sum(neg))
+    new_w = w.copy()
+    new_w[w > 0] = pos
+    new_w[w < 0] = neg
+    # v = new_w.var()
+    # new_w -= new_w.mean()
+    # new_w /= v
+    return new_w
+
 
 for i, o in enumerate(order):
     if i == 0:
@@ -238,7 +243,7 @@ for i, o in enumerate(order):
                     print("mtx_cols = {}".format(mtx_cols))
                     mtx_cols = np.tile(mtx_cols, n_rows)
                     # print("mtx_cols = {}".format(mtx_cols))
-                    ws = norm_w(weights[mtx_rows, mtx_cols].reshape((n_rows, n_out)))
+                    ws = weights[mtx_rows, mtx_cols].reshape((n_rows, n_out))
                     print(ws.shape)
                     # print(ws)
                     # row0 = prei * size_pre
@@ -248,7 +253,7 @@ for i, o in enumerate(order):
                 else:
                     row0 = prei * size_pre
                     row1 = row0 + size_pre
-                    ws = norm_w(weights[row0:row1, :])
+                    ws = weights[row0:row1, :]
                 wl.append(ws)
                 cn = sim.PoolDenseConnector(pre_shape, ws, n_out, pool_area,
                                             pool_stride)
@@ -340,6 +345,10 @@ for si, k in enumerate(order):
 
         if 'conv2d' in k or 'dense' in k:
             w = kernels[k][pi]
+
+            if 'conv2d' in k:
+                w = norm_w(w)
+
             vmax = np.max(np.abs(w))
             ax = plt.subplot(nrows, ncols, nimgs)
             im = ax.imshow(w, vmin=-vmax, vmax=vmax, cmap='PiYG')
