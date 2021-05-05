@@ -56,7 +56,7 @@ new_shape = (np.asarray(img.shape) * 1.0).astype('int')
 img = cv2.resize(img, tuple(new_shape))
 
 
-pix2rate = 500./255.
+pix2rate = 50./255.
 img *= pix2rate
 
 if VISUALIZE:
