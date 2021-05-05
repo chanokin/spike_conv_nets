@@ -3,6 +3,7 @@ import spynnaker8 as sim
 from pyNN.space import Grid2D
 import cv2
 import matplotlib.pyplot as plt
+import sys
 
 VISUALIZE = bool(0)
 
@@ -89,8 +90,7 @@ for k in kernels:
 # if VISUALIZE:
 #     plt.show()
 
-import sys
-sys.exit()
+# sys.exit()
 
 # sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
 sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=2048)
