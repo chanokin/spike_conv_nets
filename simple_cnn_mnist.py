@@ -9,11 +9,11 @@ filename = "simple_cnn_network_elements.npz"
 
 data = np.load(filename, allow_pickle=True)
 thresholds = dict(
-    conv2d=3.1836495399475098,
-    conv2d_1=2.9346282482147217,
-    dense=1.1361589431762695,
-    dense_1=2.435835599899292,
-    dense_2=2.36885929107666,
+    conv2d=1,#3.1836495399475098,
+    conv2d_1=1,#2.9346282482147217,
+    dense=1,#1.1361589431762695,
+    dense_1=1,#2.435835599899292,
+    dense_2=1,#2.36885929107666,
 )
 
 order0 = data['order']
@@ -96,8 +96,7 @@ for i, o in enumerate(order):
         chans = par['shape'][2]
         ps = def_params.copy()
         v = ps.pop('v')
-        ps['v_thresh'] = thresholds[o]
-        # ps['v_thresh'] = par['threshold']
+        ps['v_thresh'] = thresholds[o] if bool(0) else par['threshold']
         n = int(np.prod(shape))
         print(o, n, shape, chans)
         pop = [sim.Population(n, sim.IF_curr_exp_conv, ps,
@@ -154,7 +153,6 @@ offsets = {
     'dense_2': 0,
 }
 
-
 for k in rec:
     for p in pops[k][:]:
         p.record('spikes')
@@ -167,6 +165,7 @@ def norm_w(w, is_conv=False):
     new_w = w.copy()
     max_w = np.max(np.abs(w))
     new_w /= max_w
+
     # pos = w[w > 0]
     # pos /= np.sum(pos)
     # neg = w[w < 0]
@@ -174,8 +173,12 @@ def norm_w(w, is_conv=False):
     # new_w = w.copy()
     # new_w[w > 0] = pos
     # new_w[w < 0] = neg
-    # return new_w
+
+    # v = new_w.var()
+    # new_w -= new_w.mean()
+    # new_w /= v
     return new_w
+
 
 for i, o in enumerate(order):
     if i == 0:
@@ -217,16 +220,25 @@ for i, o in enumerate(order):
                             pre_shape, pooling, pool_area, pool_stride)
                 size_pre = int(np.prod(sh_pre))
                 if 'conv2d' in o0.lower():
+                    cnv = pops[o0]
                     col0 = posti * n_out
                     col1 = col0 + n_out
 
+                    mtx_rows = []
+                    chan = prei
+                    for r in np.arange(sh_pre[0]):
+                        for c in np.arange(sh_pre[1]):
+                            mtx_rows.append(r * sh_pre[1] * len(pops[o0]) +
+                                            c * len(pops[o0]) + chan)
+                    mtx_rows = np.asarray(mtx_rows)
                     pre_rows = np.repeat(np.arange(sh_pre[0]), sh_pre[1])
                     # print("pre_rows = {}".format(pre_rows))
                     pre_cols = np.tile(np.arange(sh_pre[1]), sh_pre[0])
                     # print("pre_cols = {}".format(pre_cols))
-                    mtx_rows = (pre_rows * sh_pre[1] * n_chan +
-                                pre_cols * n_chan + prei)
+                    mtx_rows0 = (pre_rows * sh_pre[1] * n_chan +
+                                 pre_cols * n_chan + prei)
                     print("mtx_rows = {}".format(mtx_rows))
+                    print(np.all(mtx_rows == mtx_rows0))
                     n_rows = len(mtx_rows)
                     mtx_rows = np.repeat(mtx_rows, n_out)
                     # print("mtx_rows = {}".format(mtx_rows))
@@ -235,7 +247,7 @@ for i, o in enumerate(order):
                     mtx_cols = np.tile(mtx_cols, n_rows)
                     # print("mtx_cols = {}".format(mtx_cols))
                     ws = weights[mtx_rows, mtx_cols].reshape((n_rows, n_out))
-                    # print(ws.shape)
+                    print(ws.shape)
                     # print(ws)
                     # row0 = prei * size_pre
                     # row1 = row0 + size_pre
@@ -246,8 +258,8 @@ for i, o in enumerate(order):
                     row1 = row0 + size_pre
                     ws = weights[row0:row1, :]
 
-                for cidx in range(ws.shape[1]):
-                    ws[:, cidx] = norm_w(ws[:, cidx])
+                # for cidx in range(ws.shape[1]):
+                #     ws[:, cidx] = norm_w(ws[:, cidx])
 
                 wl.append(ws)
                 cn = sim.PoolDenseConnector(pre_shape, ws, n_out, pool_area,
@@ -340,6 +352,10 @@ for si, k in enumerate(order):
 
         if 'conv2d' in k or 'dense' in k:
             w = kernels[k][pi]
+
+            if 'conv2d' in k:
+                w = norm_w(w)
+
             vmax = np.max(np.abs(w))
             ax = plt.subplot(nrows, ncols, nimgs)
             im = ax.imshow(w, vmin=-vmax, vmax=vmax, cmap='PiYG')
