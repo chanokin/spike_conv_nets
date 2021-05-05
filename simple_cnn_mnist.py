@@ -83,7 +83,7 @@ def_params = {
     'v_reset': 0.,
     'v': 0.,
     'tau_m': 10.,
-    'cm': 0.3,
+    'cm': 0.80,
 }
 
 for i, o in enumerate(order):
@@ -164,6 +164,9 @@ kernels = {}
 dense_weights = {}
 
 def norm_w(w, is_conv=False):
+    new_w = w.copy()
+    max_w = np.max(np.abs(w))
+    new_w /= max_w
     # pos = w[w > 0]
     # pos /= np.sum(pos)
     # neg = w[w < 0]
@@ -172,7 +175,7 @@ def norm_w(w, is_conv=False):
     # new_w[w > 0] = pos
     # new_w[w < 0] = neg
     # return new_w
-    return w
+    return new_w
 
 for i, o in enumerate(order):
     if i == 0:
@@ -231,8 +234,8 @@ for i, o in enumerate(order):
                     print("mtx_cols = {}".format(mtx_cols))
                     mtx_cols = np.tile(mtx_cols, n_rows)
                     # print("mtx_cols = {}".format(mtx_cols))
-                    ws = norm_w(weights[mtx_rows, mtx_cols].reshape((n_rows, n_out)))
-                    print(ws.shape)
+                    ws = weights[mtx_rows, mtx_cols].reshape((n_rows, n_out))
+                    # print(ws.shape)
                     # print(ws)
                     # row0 = prei * size_pre
                     # row1 = row0 + size_pre
@@ -241,7 +244,11 @@ for i, o in enumerate(order):
                 else:
                     row0 = prei * size_pre
                     row1 = row0 + size_pre
-                    ws = norm_w(weights[row0:row1, :])
+                    ws = weights[row0:row1, :]
+
+                for cidx in range(ws.shape[1]):
+                    ws[:, cidx] = norm_w(ws[:, cidx])
+
                 wl.append(ws)
                 cn = sim.PoolDenseConnector(pre_shape, ws, n_out, pool_area,
                                             pool_stride)
