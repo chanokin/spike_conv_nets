@@ -39,6 +39,7 @@ print('Y_test:  ' + str(test_y.shape))
 
 sim.extra_models.SpikeSourcePoissonVariable.set_model_max_atoms_per_core(270)
 sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
+sim.NIF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
 # sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=256)
 # sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(n_atoms=64)
 
@@ -79,13 +80,15 @@ sizes = {'input': [p.size for p in pops['input']]}
 # ------------------------------------------------------------------- #
 def_params = {
     'v_thresh': 1.,
-    'v_rest': 0.,
     'v_reset': 0.,
     'v': 0.,
-    'tau_m': 10.,
-    'cm': 0.80,
+    # 'v_rest': 0.,
+    # 'tau_m': 10.,
+    # 'cm': 0.80,
 }
-
+use_lif = bool(0)
+conv_cell_type = sim.IF_curr_exp_conv if use_lif else sim.NIF_curr_exp_conv
+dense_cell_type = sim.IF_curr_exp_pool_dense if use_lif else sim.NIF_curr_exp_pool_dense
 for i, o in enumerate(order):
     if i == 0:
         continue
@@ -99,7 +102,7 @@ for i, o in enumerate(order):
         ps['v_thresh'] = thresholds[o] if bool(0) else par['threshold']
         n = int(np.prod(shape))
         print(o, n, shape, chans)
-        pop = [sim.Population(n, sim.IF_curr_exp_conv, ps,
+        pop = [sim.Population(n, conv_cell_type, ps,
                               label="{}_chan_{}".format(o, ch))
                for ch in range(chans)]
 
@@ -269,16 +272,24 @@ for i, o in enumerate(order):
                 projs[lbl] = prj
         kernels[o] = wl
 
-sim_time = digit_duration * (n_digits + 0.1)
+sim_time = digit_duration #* (n_digits + 0.1)
+all_neos = []
+all_spikes = []
+for ch_idx in range(n_digits):
+    neos = {}
+    spikes = {}
+    sim.run(sim_time)
+    for k in pops:
+        if 'conv' in k or 'dense' in k:
+            for p in pops[k]:
+                p.set(v=0)
 
-neos = {}
-spikes = {}
-sim.run(sim_time)
+    for k in rec:
+        neos[k] = [p.get_data() for p in pops[k]]
+        spikes[k] = [x.segments[0].spiketrains for x in neos[k]]
 
-for k in rec:
-    neos[k] = [p.get_data() for p in pops[k]]
-    spikes[k] = [x.segments[0].spiketrains for x in neos[k]]
-
+    all_neos.append(neos)
+    all_spikes.append(spikes)
 
 sim.end()
 
