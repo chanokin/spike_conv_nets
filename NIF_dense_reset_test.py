@@ -5,7 +5,6 @@ import cv2
 import matplotlib.pyplot as plt
 import sys
 
-w = 0.3
 sim.setup(timestep=1.)
 pre_shape = (4, 4)
 n_neurons = int(np.prod(pre_shape))
@@ -18,10 +17,14 @@ params = {
     'v_reset': 0.,
     'v': 0.,
 }
-conn = sim.ConvolutionConnector(pre_shape, np.array([[w]]), strides=1)
-post_shape = conn.get_post_shape()
+post_size = 10
+w = 1./(3 * (n_neurons + 1))
+dense_w = np.ones((n_neurons, post_size)) * w
+
+conn = sim.PoolDenseConnector(pre_shape, dense_w, post_size=post_size)
+pool_shape = conn.get_post_pool_shape()
 # post_shape = (1, 1)
-output = sim.Population(int(np.prod(post_shape)), sim.NIF_curr_exp_conv,
+output = sim.Population(post_size, sim.NIF_curr_exp_pool_dense,
                         params, label="out")
 
 

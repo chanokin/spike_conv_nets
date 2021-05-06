@@ -49,15 +49,15 @@ np.random.seed(13)
 
 shape_in = np.asarray([28, 28])
 n_in = int(np.prod(shape_in))
-n_digits = 10#0
-digit_duration = 1000.0  # ms
+n_digits = 5#0
+digit_duration = 500.0  # ms
 digit_rate = 100.0  # hz
 in_rates = np.zeros((n_in, n_digits))
 for i in range(n_digits):
     in_rates[:, i] = test_X[i].flatten()
 
 in_rates *= (digit_rate / in_rates.max())
-in_durations = np.ones((n_in, n_digits)) * np.round(digit_duration * 0.5)
+in_durations = np.ones((n_in, n_digits)) * np.round(digit_duration * 0.9)
 in_starts = np.repeat([np.arange(n_digits) * digit_duration],
                       n_in, axis=0)
 in_params = {
@@ -86,6 +86,7 @@ def_params = {
     # 'tau_m': 10.,
     # 'cm': 0.80,
 }
+local_thresh = bool(0)
 use_lif = bool(0)
 conv_cell_type = sim.IF_curr_exp_conv if use_lif else sim.NIF_curr_exp_conv
 dense_cell_type = sim.IF_curr_exp_pool_dense if use_lif else sim.NIF_curr_exp_pool_dense
@@ -99,7 +100,7 @@ for i, o in enumerate(order):
         chans = par['shape'][2]
         ps = def_params.copy()
         v = ps.pop('v')
-        ps['v_thresh'] = thresholds[o] if bool(0) else par['threshold']
+        ps['v_thresh'] = thresholds[o] if local_thresh else par['threshold']
         n = int(np.prod(shape))
         print(o, n, shape, chans)
         pop = [sim.Population(n, conv_cell_type, ps,
@@ -112,7 +113,7 @@ for i, o in enumerate(order):
         shape = par['shape'][0:2]
         ps = def_params.copy()
         v = ps.pop('v')
-        ps['v_thresh'] = thresholds[o]
+        ps['v_thresh'] = thresholds[o] if local_thresh else par['threshold']
 
         n = int(np.prod(shape))
         chans = 1
@@ -120,7 +121,7 @@ for i, o in enumerate(order):
             chans = 4
             n = n // chans
 
-        pop = [sim.Population(n, sim.IF_curr_exp_pool_dense, ps,
+        pop = [sim.Population(n, dense_cell_type, ps,
                               label="{}_chan_{}".format(o, ch))
                for ch in range(chans)]
         for p in pop:
@@ -166,8 +167,8 @@ dense_weights = {}
 
 def norm_w(w, is_conv=False):
     new_w = w.copy()
-    max_w = np.max(np.abs(w))
-    new_w /= max_w
+    # max_w = np.max(np.abs(w))
+    # new_w /= max_w
 
     # pos = w[w > 0]
     # pos /= np.sum(pos)
@@ -278,15 +279,19 @@ all_spikes = []
 for ch_idx in range(n_digits):
     neos = {}
     spikes = {}
-    sim.run(sim_time)
+
     for k in pops:
         if 'conv' in k or 'dense' in k:
             for p in pops[k]:
                 p.set(v=0)
 
+    sim.run(sim_time)
+
     for k in rec:
         neos[k] = [p.get_data() for p in pops[k]]
         spikes[k] = [x.segments[0].spiketrains for x in neos[k]]
+
+    # sim.reset()
 
     all_neos.append(neos)
     all_spikes.append(spikes)
@@ -294,160 +299,16 @@ for ch_idx in range(n_digits):
 sim.end()
 
 
-rates = {}
-conf_matrix = np.zeros((10, 10))
-correct = 0
-no_spikes = 0
-ncols = 5
-for si, k in enumerate(order):
-    if k not in spikes:
-        continue
+import plot_simple_cnn_mnist as splt
 
-    if k == 'dense':
-        imgs, bins = plotting.spikes_to_images_list(
-                                  spikes[k], shapes[k], sim_time,
-                                  digit_duration, offsets[k],
-                                  merge_images=True)
-        # rates[k] = bins
-        rates[k] = [[np.mean([len(ts) for ts in b])
-                    for b in pbins] for pbins in bins]
-
-        nimgs = len(imgs)
-        nrows = nimgs // ncols + int(nimgs % ncols > 0)
-
-        fig = plt.figure(figsize=(ncols, nrows))
-        plt.suptitle("{}_{}".format(k, 0))
-        for i in range(nimgs):
-            ax = plt.subplot(nrows, ncols, i + 1)
-            ax.imshow(imgs[i])
-            ax.set_xticks([])
-            ax.set_yticks([])
-        plt.savefig("{:03d}_{}_{:03d}.png".format(si, k, 0), dpi=150)
-        plt.close(fig)
-        continue
-
-    rl = []
-    for pi, p in enumerate(spikes[k]):
-        imgs, bins = plotting.spikes_to_images(p, shapes[k], sim_time,
-                                               digit_duration)
-        rl.append([np.mean([len(ts) for ts in b]) for b in bins])
-
-        nimgs = len(imgs)
-        # if 'conv2d' in k:
-        #     nimgs += 1
-        nimgs += 1
-
-        nrows = nimgs // ncols + int(nimgs % ncols > 0)
-
-        fig = plt.figure(figsize=(ncols, nrows))
-        plt.suptitle("{}_{}".format(k, pi))
-        for i in range(nimgs):
-            if i == len(imgs):
-                break
-
-            ax = plt.subplot(nrows, ncols, i + 1)
-            if k == 'dense_2':
-                if np.sum(imgs[i]) == 0:
-                    no_spikes += 1
-                else:
-                    pred = np.argmax(imgs[i])
-                    corr = test_y[i]
-                    if pred == corr:
-                        correct += 1
-                    conf_matrix[corr, pred] += 1
-                    ax.set_title("{} - {}".format(test_y[i], np.argmax(imgs[i])))
-
-            ax.imshow(imgs[i])
-            ax.set_xticks([])
-            ax.set_yticks([])
-
-        if 'conv2d' in k or 'dense' in k:
-            w = kernels[k][pi]
-
-            if 'conv2d' in k:
-                w = norm_w(w)
-
-            vmax = np.max(np.abs(w))
-            ax = plt.subplot(nrows, ncols, nimgs)
-            im = ax.imshow(w, vmin=-vmax, vmax=vmax, cmap='PiYG')
-            ax.set_xticks([])
-            ax.set_yticks([])
-            plt.colorbar(im)
-
-        plt.savefig("{:03d}_{}_{:03d}.png".format(si, k, pi), dpi=150)
-        plt.close(fig)
-
-    rates[k] = rl
-
-plt.figure()
-plt.suptitle("confusion matrix ({})\n no spikes {} acc {:5.2f}%".format(
-                n_digits, no_spikes, (100. * correct)/n_digits))
-plt.imshow(conf_matrix)
-plt.savefig("confusion_matrix.pdf")
-# plt.show()
-
-
-colors = ['red', 'green', 'blue', 'cyan', 'orange',
-          'magenta', 'black', 'yellow', ]
-for i, k in enumerate(rates):
-    if k == 'input':
-        continue
-    # max_r = np.max(rates[k])
-    fig = plt.figure()
-    ax = plt.subplot(1, 1, 1)
-
-    for j, r in enumerate(rates[k]):
-
-        lbl = "{} {}".format(k, j)
-        plt.plot(r[:-1], label=lbl, linewidth=1)
-
-    plt.plot(rates['input'][0][:-1], linestyle=':', color=colors[0],
-             label='Input', linewidth=4)
-
-
-# plt.legend()
-    plt.legend(bbox_to_anchor=(1.01, 1), loc='upper left')
-    plt.savefig('average_rates_simple_cnn_mnist_layer_{}.pdf'.format(k))
-
-ord = order
-mean_rates = [np.mean(rates[rk]) for rk in ord if rk in rates]
-std_rates = [np.std(rates[rk]) for rk in ord if rk in rates]
-labels = [k for k in ord if k in rates]
-xticks = np.arange(len(mean_rates))
-fig, ax = plt.subplots(1, 1)
-ax.set_title("average rates per layer")
-im = plt.errorbar(xticks, mean_rates, yerr=std_rates,
-                  linestyle='dotted', marker='o')
-ax.set_ylabel("rate (hz)")
-ax.set_xticks(xticks)
-ax.set_xticklabels(labels)
-plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
-         rotation_mode="anchor")
-# ax.set_xticklabels(labels)
-plt.savefig("average_spikes_per_layer.png", dpi=300)
-# plt.show()
-
-
-for si, k in enumerate(order):
-    if k not in spikes:
-        continue
-
-    for pi, p in enumerate(spikes[k]):
-        fig = plt.figure()
-        plt.suptitle("{}_{}".format(k, pi))
-        ax = plt.subplot(1, 1, 1)
-        if k == 'dense_2':
-            for i in range(10):
-                plt.axhline(i, linestyle='--', color='gray', linewidth=0.1)
-
-        for i in np.arange(0, sim_time, digit_duration):
-            plt.axvline(i, linestyle='--', color='gray', linewidth=0.5)
-
-        for ni, ts in enumerate(p):
-            ax.plot(ts, ni * np.ones_like(ts), '.b', markersize=1)
-        plt.savefig("spikes_{:03d}_{}_{:03d}.png".format(si, k, pi), dpi=300)
-        plt.close(fig)
-
-# plt.show()
-
+# for i, _spikes in enumerate(all_spikes):
+# prefix = "{:03}".format(i)
+prefix = "{:03}".format(0)
+data = splt.plot_images(order, shapes, test_y, kernels, spikes,
+                        n_digits*sim_time, digit_duration, offsets, norm_w,
+                        n_digits, prefix)
+rates, conf_mtx, correct, no_spikes = data
+splt.plot_matrix(conf_mtx, n_digits, no_spikes, correct, prefix)
+splt.plot_rates(rates, order, prefix=prefix)
+splt.plot_spikes(order, spikes, sim_time, digit_duration, prefix)
 
