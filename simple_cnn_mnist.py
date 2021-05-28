@@ -8,8 +8,36 @@ import h5py
 import os
 
 
+def num_and_bits(shape):
+    bits = np.ceil(np.log2(shape)).astype('int')
+    num = np.power(2, np.sum(bits)).astype('int')
+    return num, bits
+
+
+def encode_with_field(msb, lsb, shift):
+    mask = (1 << shift) - 1
+    return np.bitwise_or(np.left_shift(msb, shift),
+                         np.bitwise_and(lsb, mask))
+
+
+def id_convert(ids, shape, most_significant_rows):
+    # shape = n_rows, n_cols
+    num, bits = num_and_bits(shape)
+    # extract coordinates from standard column major format
+    rows, cols = ids // shape[1], ids % shape[1]
+    # shift by n_cols if most_significant_rows == True
+    shift = bits[0] if most_significant_rows else bits[1]
+    # choose to shift rows and mask cols if most_significant_rows == True
+    msb, lsb = (rows, cols) if most_significant_rows else (cols, rows)
+
+    xy_ids = encode_with_field(msb, lsb, shift)
+
+    return xy_ids
+
+
 def run_network(start_char, n_digits, n_test=10000):
 
+    most_significant_rows = bool(0)
 
     filename = "simple_cnn_network_elements.npz"
 
@@ -43,9 +71,9 @@ def run_network(start_char, n_digits, n_test=10000):
     #
     # plt.show()
 
-    sim.extra_models.SpikeSourcePoissonVariable.set_model_max_atoms_per_core(270)
-    sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
-    sim.NIF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
+    sim.extra_models.SpikeSourcePoissonVariable.set_model_max_atoms_per_core(256)
+    sim.IF_curr_exp_conv.set_model_max_atoms_per_core(512)
+    sim.NIF_curr_exp_conv.set_model_max_atoms_per_core(512)
     # sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=256)
     # sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(n_atoms=64)
 
@@ -53,13 +81,18 @@ def run_network(start_char, n_digits, n_test=10000):
 
     np.random.seed(13)
 
+    # shapes are specified as Height, Width == Rows, Columns
     shape_in = np.asarray([28, 28])
     n_in = int(np.prod(shape_in))
+    in_ids = np.arange(0, n_in)
+    n_in, bits_in = num_and_bits(shape_in)
+    xy_in_ids = id_convert(in_ids, shape_in, most_significant_rows)
+
     digit_duration = 500.0  # ms
     digit_rate = 100.0  # hz
     in_rates = np.zeros((n_in, n_digits))
     for i in range(n_digits):
-        in_rates[:, i] = test_X[i].flatten()
+        in_rates[xy_in_ids, i] = test_X[i].flatten()
 
     in_rates *= (digit_rate / in_rates.max())
     in_durations = np.ones((n_in, n_digits)) * np.round(digit_duration * 0.9)
@@ -107,6 +140,7 @@ def run_network(start_char, n_digits, n_test=10000):
             v = ps.pop('v')
             ps['v_thresh'] = thresholds[o] if local_thresh else par['threshold']
             n = int(np.prod(shape))
+            n, bits = num_and_bits(shape)
             # print(o, n, shape, chans)
             pop = [sim.Population(n, conv_cell_type, ps,
                                   label="{}_chan_{}".format(o, ch))
@@ -120,6 +154,7 @@ def run_network(start_char, n_digits, n_test=10000):
             v = ps.pop('v')
             ps['v_thresh'] = thresholds[o] if local_thresh else par['threshold']
 
+            # TODO: should this be converted to XY encoding as well?
             n = int(np.prod(shape))
             chans = 1
             if 'conv2d' in order[i-1]:
@@ -225,7 +260,8 @@ def run_network(start_char, n_digits, n_test=10000):
                     w = np.flipud(np.fliplr(w))
                     wl.append(w)
                     cn = sim.ConvolutionConnector(pre_shape, w, strides=strides,
-                            pooling=pool_area, pool_stride=pool_stride)
+                            pooling=pool_area, pool_stride=pool_stride,
+                            most_significant_rows=most_significant_rows)
                     prj = sim.Projection(pre, post, cn, label=lbl)
                     projs[lbl] = prj
 
