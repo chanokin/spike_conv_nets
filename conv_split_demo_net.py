@@ -62,26 +62,26 @@ conn = sim.ConvolutionConnector(shape, ws, strides=stride)
 shape_out = conn.get_post_shape()
 sum_inputs = np.zeros(shape_out)
 hh, hw = k_shape // 2
-for i, x in enumerate(vline):
-    if len(x):
-        print(i, x)
-        r, c = i // shape[1], i % shape[1]
-        print("pre {}, r {}, c {}".format(i, r, c))
-        postr, postc = conn.pre_as_post(r, c)
-        print("postr {}, postc {}".format(postr, postc))
-        for kr in range(-hh, hh+1):
-            for kc in range(-hw, hw+1):
-                newr = postr + kr
-                newc = postc + kc
-                if (newr < 0 or newr >= shape_out[0] or
-                    newc < 0 or newc >= shape_out[1]):
-                    continue
-                www = ws[kr + k_shape[0] // 2, kc + k_shape[1] // 2]
-                print("row {}, col {}, w {}".format(newr, newc, www))
-
-                sum_inputs[newr, newc] += www
-
-print(sum_inputs)
+# for i, x in enumerate(vline):
+#     if len(x):
+#         print(i, x)
+#         r, c = i // shape[1], i % shape[1]
+#         print("pre {}, r {}, c {}".format(i, r, c))
+#         postr, postc = conn.pre_as_post(r, c)
+#         print("postr {}, postc {}".format(postr, postc))
+#         for kr in range(-hh, hh+1):
+#             for kc in range(-hw, hw+1):
+#                 newr = postr + kr
+#                 newc = postc + kc
+#                 if (newr < 0 or newr >= shape_out[0] or
+#                     newc < 0 or newc >= shape_out[1]):
+#                     continue
+#                 www = ws[kr + k_shape[0] // 2, kc + k_shape[1] // 2]
+#                 print("row {}, col {}, w {}".format(newr, newc, www))
+#
+#                 sum_inputs[newr, newc] += www
+#
+# print(sum_inputs)
 
 n_out = int(np.prod(shape_out, dtype='int32'))
 bit_w = int(np.ceil(np.log2(shape_out[1])))
