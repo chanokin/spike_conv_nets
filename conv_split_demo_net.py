@@ -4,16 +4,17 @@ from pyNN.space import Grid2D
 import matplotlib.pyplot as plt
 
 np.random.seed(13)
-
-sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=256)
+neuron_type = sim.IF_curr_exp_conv
+sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=18)
+neuron_type.set_model_max_atoms_per_core(n_atoms=18)
 n_sources = 1
 # rate = 200
-shape = np.array([32, 32], dtype='int32')  # h, w
+shape = np.array([7, 7], dtype='int32')  # h, w
 bits_w = int(np.ceil(np.log2(shape[1])))
 bits_h = int(np.ceil(np.log2(shape[0])))
 n_input = 2**(bits_h + bits_w)  # int(np.prod(shape, dtype='int32'))
 stride = np.array([1, 1], dtype='int32')  # h, w
-k_shape = np.array([5, 5], dtype='int32')
+k_shape = np.array([3, 3], dtype='int32')
 # vline = [[20.+np.random.randint(-2, 3)]
 # vline = [[20.]
 #          if (idx % shape[1]) == (shape[1] // 2) else []
@@ -94,8 +95,7 @@ post_cfg = {
     'v_rest': -65.0
 }
 
-dst = sim.Population(
-        n_out, sim.IF_curr_exp_conv, post_cfg)
+dst = sim.Population(n_out, neuron_type, post_cfg)
 # dst.record(['v', 'spikes'])
 dst.record('spikes')
 # syn = sim.StaticSynapse(weight=ws.flatten)
