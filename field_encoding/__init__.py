@@ -2,7 +2,7 @@ import numpy as np
 
 
 def n_bits(max_val):
-    return int(np.ceil(np.log2(max_val)))
+    return np.uint32(np.ceil(np.log2(max_val)))
 
 
 def generate_mask(shift):
@@ -46,3 +46,11 @@ def power_of_2_size(width, height, most_significant_rows):
     lsb_bits = n_bits(lsb_size)
 
     return int(2**(msb_bits + lsb_bits))
+
+
+def get_augmented_shape(shape):
+    bits = n_bits(shape)
+    return np.uint32(np.power(2, bits))
+
+
+

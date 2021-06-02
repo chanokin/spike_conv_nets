@@ -38,14 +38,14 @@ def generate_kernels(shape, w=1.0):
     normalize(a135, w)
 
     return {
-        # 'vert': v,
+        'vert': v,
         'a45': a45,
-        # 'horiz': h,
-        # 'a135': a135
+        'horiz': h,
+        'a135': a135
     }
 
-# img_name = 'test_img'
-img_name = 'test_pulse'
+img_name = 'test_img'
+# img_name = 'test_pulse'
 img = cv2.imread('./{}.png'.format(img_name),
                  cv2.IMREAD_GRAYSCALE).astype('float')
 
@@ -53,13 +53,14 @@ img = cv2.imread('./{}.png'.format(img_name),
 ###             N E W    S H A P E             ###
 ##################################################
 new_shape = (np.asarray(img.shape) * 1.0).astype('int')
+# new_shape = np.array([7, 7], dtype='int')
 
 img = cv2.resize(img, tuple(new_shape))
 
-new_shape = np.array([7, 7], dtype='int')
-centre =  new_shape // 2
-img = np.zeros(new_shape)
-img[centre[0], centre[1]] = 255.0
+# new_shape = np.array([7, 7], dtype='int')
+# centre =  new_shape // 2
+# img = np.zeros(new_shape)
+# img[centre[0], centre[1]] = 255.0
 
 
 pix2rate = 500./255.
@@ -80,14 +81,20 @@ bits_w = int(np.ceil(np.log2(shape[1])))
 bits_h = int(np.ceil(np.log2(shape[0])))
 n_input = 2**(bits_h + bits_w)  # int(np.prod(shape, dtype='int32'))
 
-rates = [[0] for _ in range(n_input)]
-centre_id = fe.encode_coords(centre[0], centre[1], new_shape[1], new_shape[0],
-                             ROWS_AS_MSB)
-rates[centre_id][0] = img[centre[0], centre[1]]
+rates = np.zeros((n_input, 1))
+n_in_rows = shape[0]
+n_in_cols = shape[1]
+rows = np.repeat(np.arange(n_in_rows), n_in_cols)
+cols = np.tile(np.arange(n_in_cols), n_in_rows)
+ids = fe.encode_coords(rows, cols, n_in_rows, n_in_cols, ROWS_AS_MSB)
+rates[ids, :] = img.flatten()[:, np.newaxis]
+# centre_id = fe.encode_coords(centre[0], centre[1], new_shape[1], new_shape[0],
+#                              ROWS_AS_MSB)
+# rates[centre_id][0] = img[centre[0], centre[1]]
 
 
 stride = np.array([1, 1], dtype='int32')  # h, w
-k_shape = np.array([3, 3], dtype='int32')
+k_shape = np.array([5, 5], dtype='int32')
 kernels = generate_kernels(k_shape, 1.5)
 
 for k in kernels:
@@ -108,13 +115,13 @@ for k in kernels:
 
 # sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
 # sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=2048)
-sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=18)
-sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=18)
-sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=18)
+# sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=36)
+# sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=18)
+sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=512)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=1024)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=100)
 
-run_time = 50.
+run_time = 10.
 
 sim.setup(timestep=1.)
 
