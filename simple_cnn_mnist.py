@@ -294,11 +294,6 @@ def run_network(start_char, n_digits, n_test=10000):
         neos = {}
         spikes = {}
 
-        for k in pops:
-            if 'conv' in k or 'dense' in k:
-                for p in pops[k]:
-                    p.set(v=0)
-
         sim.run(sim_time)
 
         for k in rec:
@@ -308,42 +303,44 @@ def run_network(start_char, n_digits, n_test=10000):
         all_neos.append(neos)
         all_spikes.append(spikes)
 
-        with h5py.File("output_data_simple_cnn_mnist.h5", "a") as h5:
-            # sim.reset()
-            smp = "sample"
-            tgt = "target"
-            rts = "rates"
-            nt = "n_test"
-            if not smp in h5:
-                gsamp = h5.create_dataset(smp, (10000, 1), dtype='int')
-                gtgt = h5.create_dataset(tgt, (10000, 1), dtype='int')
-                grts = h5.create_dataset(rts, (10000, 10), dtype='int')
-                gnt = h5.create_dataset(nt, (1,), dtype='int')
-            else:
-                gsamp = h5[smp]
-                gtgt = h5[tgt]
-                grts = h5[rts]
-                gnt = h5[nt]
+        # sim.reset()
 
-
-            aidx = ch_idx + start_char
-            gnt[:] = aidx + 1
-            gsamp[aidx, 0] = aidx
-            gtgt[aidx, 0] = test_y[ch_idx]
-            grts[aidx, :] = [len(ts) for ts in spikes['dense_2'][0]]
-
-            ty = test_y[ch_idx]
-            py = np.argmax([len(ts) for ts in spikes['dense_2'][0]])
-
-            print("Sample {}\tPredicted = {}\tExpected = {}".format(aidx, py, ty))
-
-
-
+        for k in pops:
+            if 'conv' in k or 'dense' in k:
+                for p in pops[k]:
+                    p.set(v=0)
 
     sim.end()
 
+    with h5py.File("output_data_simple_cnn_mnist.h5", "a") as h5:
+        # sim.reset()
+        smp = "sample"
+        tgt = "target"
+        rts = "rates"
+        nt = "n_test"
+        if not smp in h5:
+            gsamp = h5.create_dataset(smp, (10000, 1), dtype='int')
+            gtgt = h5.create_dataset(tgt, (10000, 1), dtype='int')
+            grts = h5.create_dataset(rts, (10000, 10), dtype='int')
+            gnt = h5.create_dataset(nt, (1,), dtype='int')
+        else:
+            gsamp = h5[smp]
+            gtgt = h5[tgt]
+            grts = h5[rts]
+            gnt = h5[nt]
 
+        for ch_idx in range(n_digits):
+            aidx = ch_idx + start_char
+            rs = [len(ts) for ts in all_spikes[ch_idx]['dense_2'][0]]
+            gnt[:] = aidx + 1
+            gsamp[aidx, 0] = aidx
+            gtgt[aidx, 0] = test_y[ch_idx]
+            grts[aidx, :] = rs
 
+            ty = test_y[ch_idx]
+            py = np.argmax(rs)
+
+            print("Sample {}\tPredicted = {}\tExpected = {}".format(aidx, py, ty))
 
     # import plot_simple_cnn_mnist as splt
     #
