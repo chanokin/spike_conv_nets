@@ -4,9 +4,10 @@ from pyNN.space import Grid2D
 import cv2
 import matplotlib.pyplot as plt
 import sys
+import field_encoding as fe
 
 VISUALIZE = bool(0)
-
+ROWS_AS_MSB = bool(1)
 
 def generate_kernels(shape, w=1.0):
     def normalize(k, w):
@@ -37,10 +38,10 @@ def generate_kernels(shape, w=1.0):
     normalize(a135, w)
 
     return {
-        'vert': v,
+        # 'vert': v,
         'a45': a45,
-        'horiz': h,
-        'a135': a135
+        # 'horiz': h,
+        # 'a135': a135
     }
 
 # img_name = 'test_img'
@@ -54,6 +55,11 @@ img = cv2.imread('./{}.png'.format(img_name),
 new_shape = (np.asarray(img.shape) * 1.0).astype('int')
 
 img = cv2.resize(img, tuple(new_shape))
+
+new_shape = np.array([7, 7], dtype='int')
+centre =  new_shape // 2
+img = np.zeros(new_shape)
+img[centre[0], centre[1]] = 255.0
 
 
 pix2rate = 500./255.
@@ -70,10 +76,18 @@ if VISUALIZE:
 shape = img.shape
 flat = img.flatten()
 n_input = int(np.prod(shape))
-rates = [[pix] for pix in flat]
+bits_w = int(np.ceil(np.log2(shape[1])))
+bits_h = int(np.ceil(np.log2(shape[0])))
+n_input = 2**(bits_h + bits_w)  # int(np.prod(shape, dtype='int32'))
+
+rates = [[0] for _ in range(n_input)]
+centre_id = fe.encode_coords(centre[0], centre[1], new_shape[1], new_shape[0],
+                             ROWS_AS_MSB)
+rates[centre_id][0] = img[centre[0], centre[1]]
+
 
 stride = np.array([1, 1], dtype='int32')  # h, w
-k_shape = np.array([5, 5], dtype='int32')
+k_shape = np.array([3, 3], dtype='int32')
 kernels = generate_kernels(k_shape, 1.5)
 
 for k in kernels:
@@ -93,7 +107,10 @@ for k in kernels:
 # sys.exit()
 
 # sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
-sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=2048)
+# sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=2048)
+sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=18)
+sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=18)
+sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=18)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=1024)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=100)
 
@@ -122,7 +139,8 @@ as_post = {k: {r: {c: conns[k].pre_as_post(r, c)
            for k in conns}
 
 out_shapes = {k: conns[k].get_post_shape() for k in conns}
-out_sizes = {k: int(np.prod(out_shapes[k])) for k in out_shapes}
+out_sizes = {k: fe.power_of_2_size(out_shapes[k][1], out_shapes[k][0], ROWS_AS_MSB)
+             for k in out_shapes}
 
 params = {
     'v_thresh': 1.,
@@ -131,6 +149,7 @@ params = {
     'v': 0.,
     'tau_m': 1.0,
 }
+
 outputs = {
     k: sim.Population(out_sizes[k], sim.IF_curr_exp_conv,
                       params, label="out_{}".format(k))
@@ -138,6 +157,7 @@ outputs = {
 }
 
 src.record('spikes')
+
 for k in outputs:
     outputs[k].record(['v', 'spikes'])
 # syn = sim.StaticSynapse(weight=ws.flatten)
