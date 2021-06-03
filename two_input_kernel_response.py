@@ -16,6 +16,8 @@ n_input = fe.max_coord_size(in_shape[1], in_shape[0], ROWS_AS_MSB)
 stride = np.array([1, 1], dtype='int32')  # h, w
 k_shape = np.array([5, 5], dtype='int32')
 kernel = (np.arange(np.prod(k_shape)) + 1).reshape(k_shape) * 0.01
+kernel1 = np.flipud(np.fliplr(-kernel * 0.5))
+
 print(kernel)
 
 # sys.exit()
@@ -41,7 +43,11 @@ spike_times = [[1.0] if i == spike_idx else []
 src = sim.Population(n_input, sim.SpikeSourceArray,
                      {'spike_times': spike_times}, label='input spikes')
 
+src1 = sim.Population(n_input, sim.SpikeSourceArray,
+                      {'spike_times': spike_times}, label='input spikes 1')
+
 conn = sim.ConvolutionConnector(in_shape, kernel, strides=stride)
+conn1 = sim.ConvolutionConnector(in_shape, kernel1, strides=stride)
 
 out_shape = conn.get_post_shape()
 out_size = int(np.prod(out_shape))
@@ -63,6 +69,7 @@ output.record(['v', 'spikes'])
 
 
 proj = sim.Projection(src, output, conn)
+proj1 = sim.Projection(src1, output, conn1)
 
 sim.run(run_time)
 
@@ -95,7 +102,7 @@ plt.show()
 # import plot_conv_filter_demo
 
 ctr = img[1:-1, 1:-1]
-diff = kernel - ctr
+diff = kernel + kernel1 - ctr
 plt.figure()
 ax = plt.subplot(1, 1, 1)
 ax.set_title("Difference between output centre and kernel")
