@@ -75,7 +75,8 @@ def run_network(start_char, n_digits, n_test=10000):
     sim.IF_curr_exp_conv.set_model_max_atoms_per_core(512)
     sim.NIF_curr_exp_conv.set_model_max_atoms_per_core(512)
     # sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=256)
-    # sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(n_atoms=64)
+    sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(64)
+    sim.NIF_curr_exp_pool_dense.set_model_max_atoms_per_core(64)
 
     sim.setup(timestep=1.)
 
@@ -155,11 +156,15 @@ def run_network(start_char, n_digits, n_test=10000):
             ps['v_thresh'] = thresholds[o] if local_thresh else par['threshold']
 
             # TODO: should this be converted to XY encoding as well?
+            #       at this point I think any topology is lost
             n = int(np.prod(shape))
             chans = 1
-            if 'conv2d' in order[i-1]:
-                chans = 4
-                n = n // chans
+            # TODO: Before I was manually splitting the flatten / dense
+            #       region. Hopefully, with the automatic splitting, we can
+            #       get all the network to fit in the small board
+            # if 'conv2d' in order[i-1]:
+            #     chans = 4
+            #     n = n // chans
 
             pop = [sim.Population(n, dense_cell_type, ps,
                                   label="{}_chan_{}".format(o, ch))
@@ -257,6 +262,8 @@ def run_network(start_char, n_digits, n_test=10000):
                 if 'conv2d' in o.lower():
                     # print(prei, posti, wshape, c['weights'].shape)
                     w = norm_w(weights[:, :, prei, posti].copy())
+                    # note we need to flip kernels for the operation to be a
+                    # convolution instead of a correlation
                     w = np.flipud(np.fliplr(w))
                     wl.append(w)
                     cn = sim.ConvolutionConnector(pre_shape, w, strides=strides,
@@ -271,6 +278,7 @@ def run_network(start_char, n_digits, n_test=10000):
                                 pre_shape, pooling, pool_area, pool_stride)
                     size_pre = int(np.prod(sh_pre))
                     if 'conv2d' in o0.lower():
+                        pre_is_conv = True
                         cnv = pops[o0]
                         col0 = posti * n_out
                         col1 = col0 + n_out
@@ -305,6 +313,7 @@ def run_network(start_char, n_digits, n_test=10000):
                         # ws = weights[row0:row1, col0:col1]
 
                     else:
+                        pre_is_conv = False
                         row0 = prei * size_pre
                         row1 = row0 + size_pre
                         ws = weights[row0:row1, :]
@@ -313,8 +322,8 @@ def run_network(start_char, n_digits, n_test=10000):
                     #     ws[:, cidx] = norm_w(ws[:, cidx])
 
                     wl.append(ws)
-                    cn = sim.PoolDenseConnector(pre_shape, ws, n_out, pool_area,
-                                                pool_stride)
+                    cn = sim.PoolDenseConnector(prei, pre_shape, ws, n_out, pool_area,
+                                                pool_stride, pre_is_conv=pre_is_conv)
 
                     prj = sim.Projection(pre, post, cn, label=lbl)
                     projs[lbl] = prj
