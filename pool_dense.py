@@ -2,18 +2,28 @@ import numpy as np
 import spynnaker8 as sim
 from pyNN.space import Grid2D
 import matplotlib.pyplot as plt
+import field_encoding as fe
 
 np.random.seed(13)
 
-# sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=250)
+if bool(1):
+    sim.SpikeSourceArray.set_model_max_atoms_per_core(32)
+    sim.SpikeSourcePoisson.set_model_max_atoms_per_core(32)
+    sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(64)
 
+ROWS_ARE_MSB = bool(1)
+pre_is_conv = bool(1)
 shape = np.array([7, 7], dtype='int32')  # h, w
 n_input = int(np.prod(shape, dtype='int32'))
 stride = np.array([1, 1], dtype='int32')  # h, w
 k_shape = np.array([3, 3], dtype='int32')
+
+n_input = fe.max_coord_size(shape=shape,
+                            most_significant_rows=ROWS_ARE_MSB)
+
 # vline = [[20.+np.random.randint(-2, 3)]
 vline = [[20. + idx // shape[1]]
-         if (idx % shape[1]) == (shape[1] // 2) or idx == 13 else []
+         if (idx % shape[1]) == (shape[1] // 2) else []
          for idx in range(n_input)]
 # vline = [[20. + idx]
 #          if ((idx % shape[1]) == (shape[1] // 2) and
@@ -45,12 +55,11 @@ wmax = 5.0
 run_time = 60.
 
 sim.setup(timestep=1.)
-
 src = sim.Population(n_input, sim.SpikeSourceArray,
-                     {'spike_times': vline}, label='input spikes')
+                     {'spike_times': vline}, label='input spikes 0')
 
 src1 = sim.Population(n_input, sim.SpikeSourceArray,
-                     {'spike_times': vline}, label='input spikes')
+                     {'spike_times': vline}, label='input spikes 1')
 
 pooling = np.asarray([2, 2])
 pooling_stride = np.asarray([2, 2])
@@ -67,8 +76,11 @@ print()
 print(np.max(ws))
 print(np.max(ws * div))
 print()
-conn = sim.PoolDenseConnector(shape, ws, n_out, pooling, pooling_stride)
-conn1 = sim.PoolDenseConnector(shape, ws * -1.0, n_out, pooling, pooling_stride)
+
+conn = sim.PoolDenseConnector(0, shape, ws, n_out, pooling, pooling_stride,
+                              pre_is_conv=pre_is_conv)
+conn1 = sim.PoolDenseConnector(0, shape, ws * -1.0, n_out, pooling, pooling_stride,
+                               pre_is_conv=pre_is_conv)
 
 
 post_cfg = {
