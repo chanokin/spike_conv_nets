@@ -9,7 +9,7 @@ np.random.seed(13)
 if bool(1):
     sim.SpikeSourceArray.set_model_max_atoms_per_core(32)
     sim.SpikeSourcePoisson.set_model_max_atoms_per_core(32)
-    sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(64)
+    sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(16)
 
 ROWS_ARE_MSB = bool(1)
 pre_is_conv = bool(1)
@@ -23,6 +23,10 @@ n_input = fe.max_coord_size(shape=shape,
 
 # vline = [[20.+np.random.randint(-2, 3)]
 vline = [[20. + idx // shape[1]]
+         if (idx % shape[1]) == (shape[1] // 2) else []
+         for idx in range(n_input)]
+
+vline0 = [[10. + idx // shape[1]]
          if (idx % shape[1]) == (shape[1] // 2) else []
          for idx in range(n_input)]
 # vline = [[20. + idx]
@@ -58,20 +62,20 @@ sim.setup(timestep=1.)
 src = sim.Population(n_input, sim.SpikeSourceArray,
                      {'spike_times': vline}, label='input spikes 0')
 
-src1 = sim.Population(n_input, sim.SpikeSourceArray,
-                     {'spike_times': vline}, label='input spikes 1')
+# src1 = sim.Population(n_input, sim.SpikeSourceArray,
+#                      {'spike_times': vline}, label='input spikes 1')
 
 pooling = np.asarray([2, 2])
 pooling_stride = np.asarray([2, 2])
 pool_shape = sim.PoolDenseConnector.calc_post_pool_shape(
                                     shape, True, pooling, pooling_stride)
-n_out = 128
+n_out = 32
 k_shape = np.asarray(
     (int(np.prod(pool_shape)), n_out),
     dtype='int')
 
 div = 1. / np.prod(pooling_stride)
-ws = np.arange(int(np.prod(k_shape))).reshape(k_shape) * 0.01
+ws = np.arange(int(np.prod(k_shape))).reshape(k_shape) * 0.002
 print()
 print(np.max(ws))
 print(np.max(ws * div))
@@ -79,8 +83,8 @@ print()
 
 conn = sim.PoolDenseConnector(0, shape, ws, n_out, pooling, pooling_stride,
                               pre_is_conv=pre_is_conv)
-conn1 = sim.PoolDenseConnector(0, shape, ws * -1.0, n_out, pooling, pooling_stride,
-                               pre_is_conv=pre_is_conv)
+# conn1 = sim.PoolDenseConnector(0, shape, ws * -1.0, n_out, pooling, pooling_stride,
+#                                pre_is_conv=pre_is_conv)
 
 
 post_cfg = {
@@ -95,7 +99,7 @@ dst.record(['v', 'spikes'])
 # syn = sim.StaticSynapse(weight=ws.flatten)
 
 prj = sim.Projection(src, dst, conn)
-prj1 = sim.Projection(src1, dst, conn1)
+# prj1 = sim.Projection(src1, dst, conn1)
 
 sim.run(run_time)
 
