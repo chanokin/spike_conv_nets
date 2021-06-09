@@ -71,12 +71,14 @@ def run_network(start_char, n_digits, n_test=10000):
     #
     # plt.show()
 
-    sim.extra_models.SpikeSourcePoissonVariable.set_model_max_atoms_per_core(256)
-    sim.IF_curr_exp_conv.set_model_max_atoms_per_core(512)
-    sim.NIF_curr_exp_conv.set_model_max_atoms_per_core(512)
+    MAX_N_DENSE = 64
+    MAX_N_CONV = 512
+    # sim.extra_models.SpikeSourcePoissonVariable.set_model_max_atoms_per_core(512)
+    sim.IF_curr_exp_conv.set_model_max_atoms_per_core(MAX_N_CONV)
+    sim.NIF_curr_exp_conv.set_model_max_atoms_per_core(MAX_N_CONV)
     # sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=256)
-    sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(64)
-    sim.NIF_curr_exp_pool_dense.set_model_max_atoms_per_core(64)
+    sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(MAX_N_DENSE)
+    sim.NIF_curr_exp_pool_dense.set_model_max_atoms_per_core(MAX_N_DENSE)
 
     sim.setup(timestep=1.)
 
