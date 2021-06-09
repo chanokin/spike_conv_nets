@@ -1,6 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+import field_encoding as fe
+from field_encoding import ROWS_AS_MSB
+
 
 def spikes_to_bins(spikes, max_t, t_bin):
     tbins = np.arange(0, max_t, t_bin)
@@ -25,7 +28,12 @@ def __plot_binned_spikes(binned, shape, offset_row):
                 nidx += offset_row
                 if nidx > max_idx:
                     max_idx = nidx
-                r, c = nidx // shape[1], nidx % shape[1]
+
+                r, c = fe.decode_ids(nidx, shape=shape, most_significant_rows=ROWS_AS_MSB)
+                # r, c = nidx // shape[1], nidx % shape[1]
+
+                if r >= shape[0] or c >= shape[1]:
+                    continue
 
                 # print(nidx, r, c, nspks)
                 img[r, c] = nspks

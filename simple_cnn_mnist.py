@@ -6,33 +6,35 @@ import plotting
 import sys
 import h5py
 import os
+import field_encoding as fe
+from field_encoding import ROWS_AS_MSB
 
 
-def num_and_bits(shape):
-    bits = np.ceil(np.log2(shape)).astype('int')
-    num = np.power(2, np.sum(bits)).astype('int')
-    return num, bits
+# def num_and_bits(shape):
+#     bits = np.ceil(np.log2(shape)).astype('int')
+#     num = np.power(2, np.sum(bits)).astype('int')
+#     return num, bits
+#
+#
+# def encode_with_field(msb, lsb, shift):
+#     mask = (1 << shift) - 1
+#     return np.bitwise_or(np.left_shift(msb, shift),
+#                          np.bitwise_and(lsb, mask))
 
 
-def encode_with_field(msb, lsb, shift):
-    mask = (1 << shift) - 1
-    return np.bitwise_or(np.left_shift(msb, shift),
-                         np.bitwise_and(lsb, mask))
-
-
-def id_convert(ids, shape, most_significant_rows):
-    # shape = n_rows, n_cols
-    num, bits = num_and_bits(shape)
-    # extract coordinates from standard column major format
-    rows, cols = ids // shape[1], ids % shape[1]
-    # shift by n_cols if most_significant_rows == True
-    shift = bits[0] if most_significant_rows else bits[1]
-    # choose to shift rows and mask cols if most_significant_rows == True
-    msb, lsb = (rows, cols) if most_significant_rows else (cols, rows)
-
-    xy_ids = encode_with_field(msb, lsb, shift)
-
-    return xy_ids
+# def id_convert(ids, shape, most_significant_rows):
+#     # shape = n_rows, n_cols
+#     num, bits = num_and_bits(shape)
+#     # extract coordinates from standard column major format
+#     rows, cols = ids // shape[1], ids % shape[1]
+#     # shift by n_cols if most_significant_rows == True
+#     shift = bits[0] if most_significant_rows else bits[1]
+#     # choose to shift rows and mask cols if most_significant_rows == True
+#     msb, lsb = (rows, cols) if most_significant_rows else (cols, rows)
+#
+#     xy_ids = encode_with_field(msb, lsb, shift)
+#
+#     return xy_ids
 
 
 def run_network(start_char, n_digits, n_test=10000):
@@ -88,8 +90,8 @@ def run_network(start_char, n_digits, n_test=10000):
     shape_in = np.asarray([28, 28])
     n_in = int(np.prod(shape_in))
     in_ids = np.arange(0, n_in)
-    n_in, bits_in = num_and_bits(shape_in)
-    xy_in_ids = id_convert(in_ids, shape_in, most_significant_rows)
+    n_in = fe.max_coord_size(shape=shape_in, most_significant_rows=ROWS_AS_MSB)
+    xy_in_ids = fe.convert_ids(in_ids, shape=shape_in, most_significant_rows=ROWS_AS_MSB)
 
     digit_duration = 500.0  # ms
     digit_rate = 100.0  # hz
@@ -143,7 +145,7 @@ def run_network(start_char, n_digits, n_test=10000):
             v = ps.pop('v')
             ps['v_thresh'] = thresholds[o] if local_thresh else par['threshold']
             n = int(np.prod(shape))
-            n, bits = num_and_bits(shape)
+            n = fe.max_coord_size(shape=shape, most_significant_rows=ROWS_AS_MSB)
             # print(o, n, shape, chans)
             pop = [sim.Population(n, conv_cell_type, ps,
                                   label="{}_chan_{}".format(o, ch))
@@ -178,11 +180,11 @@ def run_network(start_char, n_digits, n_test=10000):
         pops[o] = pop
 
     rec = [
-        # 'input',
-        # 'conv2d',
-        # 'conv2d_1',
-        # 'dense',
-        # 'dense_1',
+        'input',
+        'conv2d',
+        'conv2d_1',
+        'dense',
+        'dense_1',
         'dense_2',
     ]
 
@@ -252,7 +254,7 @@ def run_network(start_char, n_digits, n_test=10000):
         for prei, pre in enumerate(pops0):
             pre_shape = np.asarray(ml_param[o0]['shape'][:2])
             if len(pre_shape) == 1:
-                pre_shape = (pre.size, 1)
+                pre_shape = (1, pre.size)
                 n_chan = 1
             else:
                 n_chan = ml_param[o0]['shape'][-1]
@@ -389,18 +391,18 @@ def run_network(start_char, n_digits, n_test=10000):
 
             print("Sample {}\tPredicted = {}\tExpected = {}".format(aidx, py, ty))
 
-    # import plot_simple_cnn_mnist as splt
-    #
-    # # for i, _spikes in enumerate(all_spikes):
-    # # prefix = "{:03}".format(i)
-    # prefix = "{:03}".format(0)
-    # data = splt.plot_images(order, shapes, test_y, kernels, spikes,
-    #                         n_digits*sim_time, digit_duration, offsets, norm_w,
-    #                         n_digits, prefix)
-    # rates, conf_mtx, correct, no_spikes = data
-    # splt.plot_matrix(conf_mtx, n_digits, no_spikes, correct, prefix)
-    # splt.plot_rates(rates, order, prefix=prefix)
-    # splt.plot_spikes(order, spikes, sim_time, digit_duration, prefix)
+    import plot_simple_cnn_mnist as splt
+
+    # for i, _spikes in enumerate(all_spikes):
+    # prefix = "{:03}".format(i)
+    prefix = "{:03}".format(0)
+    data = splt.plot_images(order, shapes, test_y, kernels, spikes,
+                            n_digits*sim_time, digit_duration, offsets, norm_w,
+                            n_digits, prefix)
+    rates, conf_mtx, correct, no_spikes = data
+    splt.plot_matrix(conf_mtx, n_digits, no_spikes, correct, prefix)
+    splt.plot_rates(rates, order, prefix=prefix)
+    splt.plot_spikes(order, spikes, sim_time, digit_duration, prefix)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import plotting
+import field_encoding as fe
+
+ROW_AS_SMB = bool(1)
 
 _colors = ['red', 'green', 'blue', 'cyan', 'orange',
            'magenta', 'black', 'yellow', ]
@@ -54,8 +57,8 @@ def plot_images(order, shapes, test_y, kernels, spikes, sim_time,
 
             nrows = nimgs // ncols + int(nimgs % ncols > 0)
 
-            fig = plt.figure(figsize=(ncols, nrows))
-            plt.suptitle("{}_{}".format(k, pi))
+            fig = plt.figure(figsize=(ncols, nrows+1))
+            plt.suptitle("{}_{}\n.".format(k, pi))
             for i in range(nimgs):
                 if i == len(imgs):
                     break
@@ -70,7 +73,7 @@ def plot_images(order, shapes, test_y, kernels, spikes, sim_time,
                         if pred == corr:
                             correct += 1
                         conf_matrix[corr, pred] += 1
-                        ax.set_title("{} - {}".format(test_y[i], np.argmax(imgs[i])))
+                        ax.set_title("e {} - p {}".format(test_y[i], np.argmax(imgs[i])))
 
                 ax.imshow(imgs[i])
                 ax.set_xticks([])

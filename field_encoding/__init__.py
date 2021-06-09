@@ -1,5 +1,7 @@
 import numpy as np
 
+ROWS_AS_MSB = bool(1)
+
 
 def n_bits(max_val):
     return np.uint32(np.ceil(np.log2(max_val)))
@@ -21,13 +23,26 @@ def encode_with_field(msf, lsf, shift):
                          np.bitwise_and(lsf, mask))
 
 
+def convert_ids(ids, width=None, height=None, most_significant_rows=True, shape=None):
+    if width is not None and height is not None:
+        rows, cols = ids // width, ids % width
+        return encode_coords(rows, cols, width=width, height=height,
+                             most_significant_rows=most_significant_rows)
+    elif shape is not None:
+        rows, cols = ids // shape[1], ids % shape[1]
+        return encode_coords(rows, cols, shape=shape,
+                             most_significant_rows=most_significant_rows)
+
+    raise Exception("Either provide (width and height) or shape")
+
+
 def decode_ids(ids, width=None, height=None, most_significant_rows=True, shape=None):
     if width is not None and height is not None:
         return decode_ids_wh(ids, width, height, most_significant_rows)
     elif shape is not None:
         return decode_ids_s(ids, shape, most_significant_rows)
 
-    raise Exception("Either provide width and height or shape")
+    raise Exception("Either provide (width and height) or shape")
 
 
 def decode_ids_wh(ids, width, height, most_significant_rows):
@@ -50,7 +65,7 @@ def encode_coords(rows, cols, width=None, height=None, most_significant_rows=Tru
     elif shape is not None:
         return encode_coords_s(rows, cols, shape, most_significant_rows)
 
-    raise Exception("Either provide width and height or shape")
+    raise Exception("Either provide (width and height) or shape")
 
 
 def encode_coords_wh(rows, cols, width, height, most_significant_rows):
@@ -73,7 +88,7 @@ def power_of_2_size(width=None, height=None, most_significant_rows=True, shape=N
     elif shape is not None:
         return power_of_2_size_s(shape, most_significant_rows)
 
-    raise Exception("Either provide width and height or shape")
+    raise Exception("Either provide (width and height) or shape")
 
 
 def power_of_2_size_wh(width, height, most_significant_rows):
@@ -96,7 +111,7 @@ def max_coord_size(width=None, height=None, most_significant_rows=True, shape=No
     elif shape is not None:
         return max_coord_size_s(shape, most_significant_rows)
 
-    raise Exception("Either provide width and height or shape")
+    raise Exception("Either provide (width and height) or shape")
 
 
 def max_coord_size_wh(width, height, most_significant_rows):
