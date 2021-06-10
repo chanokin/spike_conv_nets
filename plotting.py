@@ -21,7 +21,8 @@ def __plot_binned_spikes(binned, shape, offset_row):
     images = []
     max_idx = -1
     for bidx, sbin in enumerate(binned):
-        img = np.zeros(shape)
+        new_shape = fe.get_augmented_shape(shape)
+        img = np.zeros(new_shape)
         for nidx, spks in enumerate(sbin):
             nspks = len(spks)
             if nspks:
@@ -32,8 +33,8 @@ def __plot_binned_spikes(binned, shape, offset_row):
                 r, c = fe.decode_ids(nidx, shape=shape, most_significant_rows=ROWS_AS_MSB)
                 # r, c = nidx // shape[1], nidx % shape[1]
 
-                if r >= shape[0] or c >= shape[1]:
-                    continue
+                # if r >= shape[0] or c >= shape[1]:
+                #     continue
 
                 # print(nidx, r, c, nspks)
                 img[r, c] = nspks
