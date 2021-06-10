@@ -82,8 +82,9 @@ def plot_images(order, shapes, test_y, kernels, spikes, sim_time,
             if 'conv2d' in k or 'dense' in k:
                 w = kernels[k][pi]
 
-                if 'conv2d' in k:
-                    w = norm_w(w)
+                # if 'conv2d' in k:
+                #     w = np.fliplr(np.flipud(w))
+                #     # w = norm_w(w)
 
                 vmax = np.max(np.abs(w))
                 ax = plt.subplot(nrows, ncols, nimgs)

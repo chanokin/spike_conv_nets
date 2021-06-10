@@ -39,7 +39,7 @@ from field_encoding import ROWS_AS_MSB
 
 def run_network(start_char, n_digits, n_test=10000):
 
-    most_significant_rows = bool(0)
+    most_significant_rows = ROWS_AS_MSB
 
     filename = "simple_cnn_network_elements.npz"
 
@@ -403,7 +403,7 @@ def run_network(start_char, n_digits, n_test=10000):
     splt.plot_matrix(conf_mtx, n_digits, no_spikes, correct, prefix)
     splt.plot_rates(rates, order, prefix=prefix)
     splt.plot_spikes(order, spikes, sim_time, digit_duration, prefix)
-
+    # plt.show()
 
 if __name__ == '__main__':
     start_char = int(sys.argv[1])
