@@ -125,9 +125,11 @@ def max_coord_size_s(shape, most_significant_rows):
     return max_coord_size_wh(width, height, most_significant_rows)
 
 
-def get_augmented_shape(shape):
+def get_augmented_shape(shape, most_significant_rows):
     bits = n_bits(shape)
-    return np.uint32(np.power(2, bits))
+    ash = np.uint32(np.power(2, bits))
+    sh = (shape[0], ash[1]) if most_significant_rows else (ash[0], shape[1])
+    return sh
 
 
 def get_encoded_ids(shape, most_significant_rows):
