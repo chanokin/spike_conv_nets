@@ -68,8 +68,9 @@ def plot_images(order, shapes, test_y, kernels, spikes, sim_time,
                     if np.sum(imgs[i]) == 0:
                         no_spikes += 1
                     else:
-                        pred = np.argmax(imgs[i])
-                        corr = test_y[i]
+                        pred = int(np.argmax(imgs[i]))
+                        corr = int(test_y[i])
+                        
                         if pred == corr:
                             correct += 1
                         conf_matrix[corr, pred] += 1
