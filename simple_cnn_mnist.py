@@ -8,7 +8,9 @@ import h5py
 import os
 import field_encoding as fe
 from field_encoding import ROWS_AS_MSB
-
+from sklearn.datasets import fetch_openml
+from sklearn.model_selection import train_test_split
+from sklearn.utils import check_random_state
 
 # def num_and_bits(shape):
 #     bits = np.ceil(np.log2(shape)).astype('int')
@@ -58,10 +60,22 @@ def run_network(start_char, n_digits, n_test=10000):
     ml_param = data['params'].item()
 
     # print(list(data.keys()))
+    X, y = fetch_openml('mnist_784', version=1, return_X_y=True, as_frame=False)
+#     random_state = check_random_state(0)
+#     permutation = random_state.permutation(X.shape[0])
+#     X = X[permutation]
+#     y = y[permutation]
+    X = X.reshape((X.shape[0], -1))
+    
+    train_samples = 5000
+    X_train, X_test, y_train, y_test = train_test_split(
+                                X, y, train_size=train_samples, test_size=10000)
+    
+    
 
-    test_X = mnist.test_images('./')[start_char: start_char + n_digits]
-    test_y = mnist.test_labels('./')[start_char: start_char + n_digits]
-
+    test_X = X_test[start_char: start_char + n_digits]
+    test_y = y_test[start_char: start_char + n_digits]
+        
     # shape of dataset
     # print('X_test:  ' + str(test_X.shape))
     # print('Y_test:  ' + str(test_y.shape))
@@ -394,8 +408,8 @@ def run_network(start_char, n_digits, n_test=10000):
     import plot_simple_cnn_mnist as splt
 
     # for i, _spikes in enumerate(all_spikes):
-    # prefix = "{:03}".format(i)
-    prefix = "{:03}".format(0)
+    prefix = "{:03}".format(start_char)
+#     prefix = "{:03}".format(0)
     data = splt.plot_images(order, shapes, test_y, kernels, spikes,
                             n_digits*sim_time, digit_duration, offsets, norm_w,
                             n_digits, prefix)

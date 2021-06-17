@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 
-source ../venv3/bin/activate
-gSTART=1000
-N_DIGITS=1
-N_TEST=10000
+if [ "$#" -eq 1 ]; then
+    source $1/bin/activate
+else
+    source ../venv3/bin/activate
+fi
+
+gSTART=0
+N_DIGITS=10
+N_TEST=20
 
 for ((START = $gSTART; START < $N_TEST; START += $N_DIGITS))
 do
