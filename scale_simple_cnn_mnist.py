@@ -1,6 +1,5 @@
 import spynnaker8 as sim
 import numpy as np
-import mnist
 import matplotlib.pyplot as plt
 import plotting
 import sys
@@ -8,48 +7,24 @@ import h5py
 import os
 import field_encoding as fe
 from field_encoding import ROWS_AS_MSB
+from sklearn.datasets import fetch_openml
+from sklearn.model_selection import train_test_split
+from sklearn.utils import check_random_state
+from skimage.transform import rescale, resize, downscale_local_mean
 
 
-# def num_and_bits(shape):
-#     bits = np.ceil(np.log2(shape)).astype('int')
-#     num = np.power(2, np.sum(bits)).astype('int')
-#     return num, bits
-#
-#
-# def encode_with_field(msb, lsb, shift):
-#     mask = (1 << shift) - 1
-#     return np.bitwise_or(np.left_shift(msb, shift),
-#                          np.bitwise_and(lsb, mask))
-
-
-# def id_convert(ids, shape, most_significant_rows):
-#     # shape = n_rows, n_cols
-#     num, bits = num_and_bits(shape)
-#     # extract coordinates from standard column major format
-#     rows, cols = ids // shape[1], ids % shape[1]
-#     # shift by n_cols if most_significant_rows == True
-#     shift = bits[0] if most_significant_rows else bits[1]
-#     # choose to shift rows and mask cols if most_significant_rows == True
-#     msb, lsb = (rows, cols) if most_significant_rows else (cols, rows)
-#
-#     xy_ids = encode_with_field(msb, lsb, shift)
-#
-#     return xy_ids
-
-
-def run_network(start_char, n_digits, n_test=10000):
-
+def run_network(start_char, n_digits, n_test=10000, scale=1.0):
     most_significant_rows = ROWS_AS_MSB
 
     filename = "simple_cnn_network_elements.npz"
 
     data = np.load(filename, allow_pickle=True)
     thresholds = dict(
-        conv2d=1,#3.1836495399475098,
-        conv2d_1=1,#2.9346282482147217,
-        dense=1,#1.1361589431762695,
-        dense_1=1,#2.435835599899292,
-        dense_2=1,#2.36885929107666,
+        conv2d=1,  # 3.1836495399475098,
+        conv2d_1=1,  # 2.9346282482147217,
+        dense=1,  # 1.1361589431762695,
+        dense_1=1,  # 2.435835599899292,
+        dense_2=1,  # 2.36885929107666,
     )
 
     order0 = data['order']
@@ -58,9 +33,29 @@ def run_network(start_char, n_digits, n_test=10000):
     ml_param = data['params'].item()
 
     # print(list(data.keys()))
+    X, y = fetch_openml('mnist_784', version=1, return_X_y=True, as_frame=False)
+    #     random_state = check_random_state(0)
+    #     permutation = random_state.permutation(X.shape[0])
+    #     X = X[permutation]
+    #     y = y[permutation]
+    X = X.reshape((X.shape[0], -1))
 
-    test_X = mnist.test_images('./')[start_char: start_char + n_digits]
-    test_y = mnist.test_labels('./')[start_char: start_char + n_digits]
+    train_samples = 5000
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, train_size=train_samples, test_size=10000)
+
+    test_X_0 = X_test[start_char: start_char + n_digits]
+    test_y = y_test[start_char: start_char + n_digits]
+
+    shape_in = np.asarray([64, 64])
+    orig_shape = [28, 28]
+    test_X = []
+    for i, x in enumerate(test_X_0):
+        #         image_resized = resize(image, (image.shape[0] // 4, image.shape[1] // 4),
+        #                        anti_aliasing=True)
+        x = x.reshape(orig_shape)
+        x = resize(x, shape_in, anti_aliasing=True)
+        test_X.append(x)
 
     # shape of dataset
     # print('X_test:  ' + str(test_X.shape))
@@ -87,7 +82,6 @@ def run_network(start_char, n_digits, n_test=10000):
     np.random.seed(13)
 
     # shapes are specified as Height, Width == Rows, Columns
-    shape_in = np.asarray([28, 28])
     n_in = int(np.prod(shape_in))
     in_ids = np.arange(0, n_in)
     n_in = fe.max_coord_size(shape=shape_in, most_significant_rows=ROWS_AS_MSB)
@@ -133,13 +127,32 @@ def run_network(start_char, n_digits, n_test=10000):
     use_lif = bool(0)
     conv_cell_type = sim.IF_curr_exp_conv if use_lif else sim.NIF_curr_exp_conv
     dense_cell_type = sim.IF_curr_exp_pool_dense if use_lif else sim.NIF_curr_exp_pool_dense
+    pre_shapes = [np.array([28, 28])]
     for i, o in enumerate(order):
         if i == 0:
             continue
 
+        o0 = order[i - 1]
+        pre_shape = pre_shapes[i - 1]
         par = ml_param[o]
         if 'conv2d' in o.lower():
-            shape = par['shape'][0:2]
+            c = ml_conns[o]
+            kernel_shape = c['weights'].shape[:2]
+            pooling = 'pool' in c
+            pool_area = np.asarray(c['pool']['shape']) if pooling else None
+            pool_stride = np.asarray(c['pool']['strides']) if pooling else None
+            wshape = c.get('shape', None)
+            strides = c.get('strides', None)
+            shape = sim.ConvolutionConnector.calculate_post_shape(
+                pre_shape, kernel_shape,
+                padding=np.array([0, 0]),
+                stride=strides,
+                pooling=pooling,
+                pool_shape=pool_area,
+                pool_stride=pool_stride)
+            pre_shapes.append(shape)
+
+            #             shape = par['shape'][0:2]
             chans = par['shape'][2]
             ps = def_params.copy()
             v = ps.pop('v')
@@ -155,6 +168,7 @@ def run_network(start_char, n_digits, n_test=10000):
                 p.set(v=v)
         elif 'dense' in o.lower():
             shape = par['shape'][0:2]
+            pre_shapes.append(shape)
             ps = def_params.copy()
             v = ps.pop('v')
             ps['v_thresh'] = thresholds[o] if local_thresh else par['threshold']
@@ -234,7 +248,6 @@ def run_network(start_char, n_digits, n_test=10000):
 
         return new_w
 
-
     for i, o in enumerate(order):
         if i == 0:
             continue
@@ -245,14 +258,15 @@ def run_network(start_char, n_digits, n_test=10000):
         pool_stride = np.asarray(c['pool']['strides']) if pooling else None
         wshape = c.get('shape', None)
         strides = c.get('strides', None)
-
-        o0 = order[i-1]
+        pre_shape = pre_shapes[i - 1]
+        o0 = order[i - 1]
         # dense_weights[o] =
         pops0 = pops[o0]
         pops1 = pops[o]
         # print(o0, o)
         for prei, pre in enumerate(pops0):
-            pre_shape = np.asarray(ml_param[o0]['shape'][:2])
+            #             pre_shape = np.asarray(ml_param[o0]['shape'][:2])
+
             if len(pre_shape) == 1:
                 pre_shape = (1, pre.size)
                 n_chan = 1
@@ -271,15 +285,15 @@ def run_network(start_char, n_digits, n_test=10000):
                     w = np.flipud(np.fliplr(w))
                     wl.append(w)
                     cn = sim.ConvolutionConnector(pre_shape, w, strides=strides,
-                            pooling=pool_area, pool_stride=pool_stride,
-                            most_significant_rows=most_significant_rows)
+                                                  pooling=pool_area, pool_stride=pool_stride,
+                                                  most_significant_rows=most_significant_rows)
                     prj = sim.Projection(pre, post, cn, label=lbl)
                     projs[lbl] = prj
 
                 elif 'dense' in o.lower():
                     n_out = post.size
                     sh_pre = sim.PoolDenseConnector.calc_post_pool_shape(
-                                pre_shape, pooling, pool_area, pool_stride)
+                        pre_shape, pooling, pool_area, pool_stride)
                     size_pre = int(np.prod(sh_pre))
                     if 'conv2d' in o0.lower():
                         pre_is_conv = True
@@ -334,7 +348,7 @@ def run_network(start_char, n_digits, n_test=10000):
 
             kernels[o] = wl
 
-    sim_time = digit_duration #* (n_digits + 0.1)
+    sim_time = digit_duration  # * (n_digits + 0.1)
     all_neos = []
     all_spikes = []
     for ch_idx in range(n_digits):
@@ -394,25 +408,27 @@ def run_network(start_char, n_digits, n_test=10000):
     import plot_simple_cnn_mnist as splt
 
     # for i, _spikes in enumerate(all_spikes):
-    # prefix = "{:03}".format(i)
-    prefix = "{:03}".format(0)
+    prefix = "{:03}".format(start_char)
+    #     prefix = "{:03}".format(0)
     data = splt.plot_images(order, shapes, test_y, kernels, spikes,
-                            n_digits*sim_time, digit_duration, offsets, norm_w,
+                            n_digits * sim_time, digit_duration, offsets, norm_w,
                             n_digits, prefix)
     rates, conf_mtx, correct, no_spikes = data
-    splt.plot_matrix(conf_mtx, n_digits, no_spikes, correct, prefix)
-    splt.plot_rates(rates, order, prefix=prefix)
-    splt.plot_spikes(order, spikes, sim_time, digit_duration, prefix)
-    # plt.show()
+
+
+#     splt.plot_matrix(conf_mtx, n_digits, no_spikes, correct, prefix)
+#     splt.plot_rates(rates, order, prefix=prefix)
+#     splt.plot_spikes(order, spikes, sim_time, digit_duration, prefix)
+# plt.show()
 
 if __name__ == '__main__':
-    start_char = int(sys.argv[1])
-    n_digits = int(sys.argv[2])
-    n_test = int(sys.argv[3])
+    start_char = 0
+    n_digits = 1
+    n_test = 1
     print(
         "======================================================="
         "\n start character index {} "
         "\n number of characters per run {}"
         "\n=======================================================\n\n".format(
             start_char, n_digits))
-    run_network(start_char, n_digits)
+    run_network(start_char, n_digits, scale=1)
