@@ -7,7 +7,7 @@ import field_encoding as fe
 np.random.seed(13)
 
 if bool(1):
-    # sim.SpikeSourceArray.set_model_max_atoms_per_core(32)
+    sim.SpikeSourceArray.set_model_max_atoms_per_core(10)
     # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(32)
     sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(16)
 
@@ -75,13 +75,13 @@ pooling = np.asarray([2, 2]) if pre_is_conv else 1
 pooling_stride = np.asarray([2, 2])
 pool_shape = sim.PoolDenseConnector.calc_post_pool_shape(
                                     shape, pre_is_conv, pooling, pooling_stride)
-n_out = 32
+n_out = 23
 k_shape = np.asarray(
     (int(np.prod(pool_shape)), n_out),
     dtype='int')
 
 div = 1. / np.prod(pooling_stride)
-ws = np.arange(int(np.prod(k_shape))).reshape(k_shape) * 0.002
+ws = np.arange(int(np.prod(k_shape))).reshape(k_shape) * 0.0005
 print()
 print(np.max(ws))
 print(np.max(ws * div))
