@@ -11,6 +11,7 @@ if bool(1):
     # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(32)
     sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(16)
 
+n_pre = 2
 ROWS_ARE_MSB = bool(1)
 pre_is_conv = bool(0)
 if pre_is_conv:
@@ -63,15 +64,17 @@ run_time = 60.
 
 sim.setup(timestep=1.)
 src = sim.Population(n_input, sim.SpikeSourceArray,
-                     {'spike_times': vline}, label='input spikes 0')
+                     {'spike_times': vline},
+                     label='input spikes 0')
 
 src1 = sim.Population(n_input, sim.SpikeSourceArray,
-                     {'spike_times': vline0}, label='input spikes 1')
+                      {'spike_times': vline0},
+                      label='input spikes 1')
 
-pooling = np.asarray([2, 2])
+pooling = np.asarray([2, 2]) if pre_is_conv else 1
 pooling_stride = np.asarray([2, 2])
 pool_shape = sim.PoolDenseConnector.calc_post_pool_shape(
-                                    shape, True, pooling, pooling_stride)
+                                    shape, pre_is_conv, pooling, pooling_stride)
 n_out = 32
 k_shape = np.asarray(
     (int(np.prod(pool_shape)), n_out),
