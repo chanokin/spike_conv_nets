@@ -13,9 +13,9 @@ if bool(1):
 
 n_pre = 2
 ROWS_ARE_MSB = bool(1)
-pre_is_conv = bool(0)
+pre_is_conv = bool(1)
 if pre_is_conv:
-    shape = np.array([7, 7], dtype='int32')  # h, w
+    shape = np.array([5, 5], dtype='int32')  # h, w
     stride = np.array([1, 1], dtype='int32')  # h, w
     k_shape = np.array([3, 3], dtype='int32')
 
