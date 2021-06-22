@@ -13,7 +13,7 @@ if bool(1):
 
 n_pre = 2
 ROWS_ARE_MSB = bool(1)
-pre_is_conv = bool(1)
+pre_is_conv = bool(0)
 if pre_is_conv:
     shape = np.array([5, 5], dtype='int32')  # h, w
     stride = np.array([1, 1], dtype='int32')  # h, w
@@ -81,8 +81,9 @@ k_shape = np.asarray(
     dtype='int')
 
 div = 1. / np.prod(pooling_stride)
-ws = np.arange(int(np.prod(k_shape))).reshape(k_shape) * 0.0005
+ws = np.arange(int(np.prod(k_shape))).reshape(k_shape) * 0.01
 print()
+print(ws)
 print(np.max(ws))
 print(np.max(ws * div))
 print()
