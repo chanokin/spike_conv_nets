@@ -5,8 +5,9 @@ import cv2
 import matplotlib.pyplot as plt
 import sys
 
+sim.NIF_curr_exp_pool_dense.set_model_max_atoms_per_core(10)
 sim.setup(timestep=1.)
-pre_shape = (4, 4)
+pre_shape = (5, 5)
 n_neurons = int(np.prod(pre_shape))
 src = sim.Population(n_neurons, sim.SpikeSourceArray,
                      {'spike_times': [[1, 2, 3] for _ in range(n_neurons)]},
@@ -17,11 +18,11 @@ params = {
     'v_reset': 0.,
     'v': 0.,
 }
-post_size = 10
+post_size = 13
 w = 1./(3 * (n_neurons + 1))
 dense_w = np.ones((n_neurons, post_size)) * w
 
-conn = sim.PoolDenseConnector(pre_shape, dense_w, post_size=post_size)
+conn = sim.PoolDenseConnector(0, pre_shape, dense_w, post_size=post_size)
 pool_shape = conn.get_post_pool_shape()
 # post_shape = (1, 1)
 output = sim.Population(post_size, sim.NIF_curr_exp_pool_dense,
