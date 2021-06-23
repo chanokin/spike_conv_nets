@@ -20,7 +20,8 @@ params = {
 }
 post_size = 13
 w = 1./(3 * (n_neurons + 1))
-dense_w = np.random.uniform(-0.5, 0.5, size=(n_neurons, post_size))
+dense_w = np.ones((n_neurons, post_size)) * w
+# dense_w = np.random.uniform(-0.5, 0.5, size=(n_neurons, post_size))
 
 conn = sim.PoolDenseConnector(0, pre_shape, dense_w, post_size=post_size)
 pool_shape = conn.get_post_pool_shape()
