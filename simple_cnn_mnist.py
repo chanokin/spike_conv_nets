@@ -87,7 +87,7 @@ def run_network(start_char, n_digits, n_test=10000):
     #
     # plt.show()
 
-    MAX_N_DENSE = 64
+    MAX_N_DENSE = 128
     MAX_N_CONV = 512
     # sim.extra_models.SpikeSourcePoissonVariable.set_model_max_atoms_per_core(512)
     sim.IF_curr_exp_conv.set_model_max_atoms_per_core(MAX_N_CONV)
@@ -357,6 +357,8 @@ def run_network(start_char, n_digits, n_test=10000):
         neos = {}
         spikes = {}
 
+        # sim.reset()
+
         sim.run(sim_time)
 
         for k in rec:
@@ -414,9 +416,17 @@ def run_network(start_char, n_digits, n_test=10000):
                             n_digits*sim_time, digit_duration, offsets, norm_w,
                             n_digits, prefix)
     rates, conf_mtx, correct, no_spikes = data
+
     splt.plot_matrix(conf_mtx, n_digits, no_spikes, correct, prefix)
     splt.plot_rates(rates, order, prefix=prefix)
     splt.plot_spikes(order, spikes, sim_time, digit_duration, prefix)
+
+    np.savez_compressed('activity_for_simple_cnn.npz',
+                        order=order, shapes=shapes, test_y=test_y, kernels=kernels,
+                        spikes=spikes, total_sim_time=n_digits*sim_time,
+                        digit_duration=digit_duration, offsets=offsets,
+                        n_digits=n_digits, rates=rates, conf_mtx=conf_mtx,
+                        correct=correct, no_spikes=no_spikes)
     # plt.show()
 
 if __name__ == '__main__':
