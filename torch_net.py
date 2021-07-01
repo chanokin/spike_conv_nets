@@ -82,7 +82,6 @@ class DVSModelSimple2(pl.LightningModule):
                 bls = [b._modules[l] for l in sorted(b._modules)]
             else:
                 bls = [b]
-
             lyrs.extend(bls)
 
         return lyrs
