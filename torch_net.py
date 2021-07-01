@@ -1,7 +1,7 @@
 import torch
 import norse.torch
 # from models import snn
-
+from torch_to_pynn import Parser
 import torch.nn as nn
 from norse.torch.module.sequential import SequentialState
 from norse.torch.functional.lif import LIFParameters
@@ -144,6 +144,9 @@ class DVSModelSimple2(pl.LightningModule):
 
 
 m = DVSModelSimple2(9, 2, 128, 128)
+
+parser = Parser(m)
+
 onnx_path = 'dvs.onnx'
 torch.onnx.export(m, torch.randn(1, 1, 2, 128, 128), onnx_path,
                   verbose=True, opset_version=11)
@@ -186,64 +189,64 @@ plt.axis('off')
 # -------------------------------------------------------------------- #
 # -------------------------------------------------------------------- #
 
-from snntoolbox.utils.utils import import_configparser
-from snntoolbox.simulation.target_simulators.spiNNaker_target_sim import SNN
-configparser = import_configparser()
-config = configparser.ConfigParser()
-config['paths'] = {
-    'path_wd': '.',             # Path to model.
-}
-
-config['tools'] = {
-    'evaluate_ann': False,           # Test ANN on dataset before conversion.
-    # Normalize weights for full dynamic range.
-    'normalize': False,
-    'scale_weights_exp': False
-}
-
-config['input'] = {
-    'poisson_input': True,           # Images are encodes as spike trains.
-    'input_rate': 100,
-    'dataset_format': 'poisson',
-    'num_poisson_events_per_sample': 100,
-}
-
-config['cell'] = {
-    'v': 0.0,
-    'v_thresh': 1.0
-}
-
-config['simulation'] = {
-    # Chooses execution backend of SNN toolbox.
-    'simulator': 'spiNNaker',
-    'duration': 50,                 # Number of time steps to run each sample.
-    'num_to_test': 5,               # How many test samples to run.
-    'batch_size': 1,                # Batch size for simulation.
-    # SpiNNaker seems to require 0.1 for comparable results.
-    'dt': 0.1,
-    'early_stopping': True
-}
-
-config['restrictions'] = {
-    'simulators_pynn': {
-        'simulator': 'spiNNaker'
-    },
-    'cellparams_pynn': {
-        'v': 0.0,
-        'v_thresh': 1.0
-    }
-}
-
-config['output'] = {
-    'plot_vars': {                  # Various plots (slows down simulation).
-    },
-    'log_vars': {
-    }
-}
-
-snn_parser = SNN(config)
-snn_parser.build(m)
-snn_parser.save('.', 'snn_model')
+# from snntoolbox.utils.utils import import_configparser
+# from snntoolbox.simulation.target_simulators.spiNNaker_target_sim import SNN
+# configparser = import_configparser()
+# config = configparser.ConfigParser()
+# config['paths'] = {
+#     'path_wd': '.',             # Path to model.
+# }
+#
+# config['tools'] = {
+#     'evaluate_ann': False,           # Test ANN on dataset before conversion.
+#     # Normalize weights for full dynamic range.
+#     'normalize': False,
+#     'scale_weights_exp': False
+# }
+#
+# config['input'] = {
+#     'poisson_input': True,           # Images are encodes as spike trains.
+#     'input_rate': 100,
+#     'dataset_format': 'poisson',
+#     'num_poisson_events_per_sample': 100,
+# }
+#
+# config['cell'] = {
+#     'v': 0.0,
+#     'v_thresh': 1.0
+# }
+#
+# config['simulation'] = {
+#     # Chooses execution backend of SNN toolbox.
+#     'simulator': 'spiNNaker',
+#     'duration': 50,                 # Number of time steps to run each sample.
+#     'num_to_test': 5,               # How many test samples to run.
+#     'batch_size': 1,                # Batch size for simulation.
+#     # SpiNNaker seems to require 0.1 for comparable results.
+#     'dt': 0.1,
+#     'early_stopping': True
+# }
+#
+# config['restrictions'] = {
+#     'simulators_pynn': {
+#         'simulator': 'spiNNaker'
+#     },
+#     'cellparams_pynn': {
+#         'v': 0.0,
+#         'v_thresh': 1.0
+#     }
+# }
+#
+# config['output'] = {
+#     'plot_vars': {                  # Various plots (slows down simulation).
+#     },
+#     'log_vars': {
+#     }
+# }
+#
+# snn_parser = SNN(config)
+# snn_parser.build(m)
+# snn_parser.save('.', 'snn_model')
 
 
 
