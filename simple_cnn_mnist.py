@@ -8,7 +8,9 @@ import h5py
 import os
 import field_encoding as fe
 from field_encoding import ROWS_AS_MSB
-
+from sklearn.datasets import fetch_openml
+from sklearn.model_selection import train_test_split
+from sklearn.utils import check_random_state
 
 # def num_and_bits(shape):
 #     bits = np.ceil(np.log2(shape)).astype('int')
@@ -58,10 +60,22 @@ def run_network(start_char, n_digits, n_test=10000):
     ml_param = data['params'].item()
 
     # print(list(data.keys()))
+    X, y = fetch_openml('mnist_784', version=1, return_X_y=True, as_frame=False)
+#     random_state = check_random_state(0)
+#     permutation = random_state.permutation(X.shape[0])
+#     X = X[permutation]
+#     y = y[permutation]
+    X = X.reshape((X.shape[0], -1))
+    
+    train_samples = 5000
+    X_train, X_test, y_train, y_test = train_test_split(
+                                X, y, train_size=train_samples, test_size=10000)
+    
+    
 
-    test_X = mnist.test_images('./')[start_char: start_char + n_digits]
-    test_y = mnist.test_labels('./')[start_char: start_char + n_digits]
-
+    test_X = X_test[start_char: start_char + n_digits]
+    test_y = y_test[start_char: start_char + n_digits]
+        
     # shape of dataset
     # print('X_test:  ' + str(test_X.shape))
     # print('Y_test:  ' + str(test_y.shape))
@@ -73,7 +87,7 @@ def run_network(start_char, n_digits, n_test=10000):
     #
     # plt.show()
 
-    MAX_N_DENSE = 64
+    MAX_N_DENSE = 128
     MAX_N_CONV = 512
     # sim.extra_models.SpikeSourcePoissonVariable.set_model_max_atoms_per_core(512)
     sim.IF_curr_exp_conv.set_model_max_atoms_per_core(MAX_N_CONV)
@@ -343,6 +357,8 @@ def run_network(start_char, n_digits, n_test=10000):
         neos = {}
         spikes = {}
 
+        # sim.reset()
+
         sim.run(sim_time)
 
         for k in rec:
@@ -394,15 +410,23 @@ def run_network(start_char, n_digits, n_test=10000):
     import plot_simple_cnn_mnist as splt
 
     # for i, _spikes in enumerate(all_spikes):
-    # prefix = "{:03}".format(i)
-    prefix = "{:03}".format(0)
+    prefix = "{:03}".format(start_char)
+#     prefix = "{:03}".format(0)
     data = splt.plot_images(order, shapes, test_y, kernels, spikes,
                             n_digits*sim_time, digit_duration, offsets, norm_w,
                             n_digits, prefix)
     rates, conf_mtx, correct, no_spikes = data
+
     splt.plot_matrix(conf_mtx, n_digits, no_spikes, correct, prefix)
     splt.plot_rates(rates, order, prefix=prefix)
     splt.plot_spikes(order, spikes, sim_time, digit_duration, prefix)
+
+    np.savez_compressed('activity_for_simple_cnn.npz',
+                        order=order, shapes=shapes, test_y=test_y, kernels=kernels,
+                        spikes=spikes, total_sim_time=n_digits*sim_time,
+                        digit_duration=digit_duration, offsets=offsets,
+                        n_digits=n_digits, rates=rates, conf_mtx=conf_mtx,
+                        correct=correct, no_spikes=no_spikes)
     # plt.show()
 
 if __name__ == '__main__':

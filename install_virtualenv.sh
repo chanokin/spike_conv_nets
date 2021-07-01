@@ -78,8 +78,8 @@ python setup.py develop --no-deps
 cd ../sPyNNaker8
 python setup.py develop --no-deps
 
-cd ../sPyNNaker8NewModelTemplate
-python setup.py develop --no-deps
+# cd ../sPyNNaker8NewModelTemplate
+# python setup.py develop --no-deps
 
 #cd ../sPyNNakerExternalDevicesPlugin
 #python setup.py develop --no-deps
