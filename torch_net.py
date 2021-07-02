@@ -7,7 +7,7 @@ from norse.torch.module.sequential import SequentialState
 from norse.torch.functional.lif import LIFParameters
 from norse.torch.module.lif import LIFCell
 from norse.torch.module.leaky_integrator import LICell
-
+import spynnaker8 as sim
 import pytorch_lightning as pl
 
 class DVSModelSimple2(pl.LightningModule):
@@ -144,11 +144,15 @@ class DVSModelSimple2(pl.LightningModule):
 
 
 m = DVSModelSimple2(9, 2, 128, 128)
+dummy = torch.randn(1, 1, 2, 128, 128)
+parser = Parser(m, dummy, sim)
+pynn_pops_d, pynn_projs_d = parser.generate_pynn_dictionaries()
 
-parser = Parser(m)
+# do pynn setup
+pynn_pops, pynn_projs = parser.generate_pynn_objects(pynn_pops_d, pynn_projs_d)
 
 onnx_path = 'dvs.onnx'
-torch.onnx.export(m, torch.randn(1, 1, 2, 128, 128), onnx_path,
+torch.onnx.export(m, dummy, onnx_path,
                   verbose=True, opset_version=11)
 
 # -------------------------------------------------------------------- #
