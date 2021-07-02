@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import torch
 import norse.torch
 from torch import nn
@@ -15,17 +17,21 @@ class Parser:
     LICELL_KEYS = ('alpha', 'tau_mem_inv', 'tau_syn_inv',
                    'v_leak', 'v_reset', 'v_th')
     CELL_TYPES = {
-        'LICell': 'IF_curr_exp_conv'
+        'Conv2dLICell': 'IF_curr_exp_conv'
     }
 
-    CELL_PARAMS_TRANSLATIONS = {
-        'LICell': {
+    CELL_TRANSLATIONS = {
+        'Conv2dLICell': {
             'tau_mem_inv': ('tau_m', lambda x: 1./x),
             # 'tau_syn_inv': ('tau_syn', lambda x: 1./x),
             'v_leak': ('v_rest', lambda x: x),
             'v_reset': ('v_reset', lambda x: x),
             'v_th': ('v_thresh', lambda x: x)
         }
+    }
+    CONNECT_TRANSLATIONS = {
+        'AvgPool2D': {},
+        'Conv2D': {}
     }
 
     def __init__(self, model, dummy_data, pynn):
@@ -84,11 +90,18 @@ class Parser:
         sim = self.pynn
         pops = {}
         count = 0
+        prev_i = 0
         for i, d in self.layer_dicts.items():
-            n = d['name']
-            if n not in self.CELL_TYPES:
+            if i == 0:
                 continue
-            ct = getattr(sim, self.CELL_TYPES[n])
+
+            n0 = self.layer_dicts[prev_i]['name']
+            n = d['name']
+            prev_i = i
+            comp_name = "{}{}".format(n0, n)
+            if comp_name not in self.CELL_TYPES:
+                continue
+            ct = getattr(sim, self.CELL_TYPES[comp_name])
             osh = d['out_shape']
             if len(osh) > 2:
                 n_channels = osh[1]
@@ -97,7 +110,7 @@ class Parser:
                 n_channels = 1
                 size = int(np.prod(osh))
 
-            params = self.parse_cell_parameters(n, d)
+            params = self.parse_cell_parameters(comp_name, d)
             label = "{}_{}__size_{}".format(n, count, size)
             # size, cellclass, cellparams =
 
@@ -137,9 +150,9 @@ class Parser:
 
                 for j, c in enumerate(conn_layers_dicts):
                     nn = c['name']
-                    if 'avgpool' in nn.lower():
+                    if 'avgpool2d' == nn.lower():
                         pj.update(self.parse_pool_params(nn, c))
-                    elif 'conv' in nn.lower():
+                    elif 'conv2d' == nn.lower():
                         pj.update(self.parse_conv_params(nn, c))
 
                 conn_layers_dicts[:] = []
@@ -170,7 +183,7 @@ class Parser:
             return self.pynn.Projection(**proj_d)
 
     def parse_cell_parameters(self, name, layer_dict):
-        tr = self.CELL_PARAMS_TRANSLATIONS[name]
+        tr = self.CELL_TRANSLATIONS[name]
         params = {v[0]: v[1](layer_dict[k].detach().cpu().numpy())
                   for k, v in tr.items()}
         return params
@@ -181,8 +194,20 @@ class Parser:
     def parse_conv_params(self, name, layer_dict):
         pass
 
-    def generate_pynn_populations(self):
-        pass
+    def generate_pynn_populations(self, pops_dicts):
+        pops = {}
+        for i, di in pops_dicts.items():
+            d = deepcopy(di)
+            n_channels = d.pop('n_channels')
+            lbl = di['label']
+            ps = []
+            for j in range(n_channels):
+                d['label'] = '{}_ch{}'.format(lbl, j)
+                ps.append(self.pynn_dict_to_object('population', d))
 
-    def generate_pynn_projections(self, pops):
+            pops[i] = ps
+
+        return pops
+
+    def generate_pynn_projections(self, pynn_pops, projs_dicts):
         pass
