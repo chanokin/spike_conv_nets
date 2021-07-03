@@ -22,11 +22,11 @@ class Parser:
 
     CELL_TRANSLATIONS = {
         'Conv2dLICell': {
-            'tau_mem_inv': ('tau_m', lambda x: 1./x),
+            'tau_mem_inv': ('tau_m', lambda x: np.asscalar(1./x.detach().numpy())),
             # 'tau_syn_inv': ('tau_syn', lambda x: 1./x),
-            'v_leak': ('v_rest', ),
-            'v_reset': ('v_reset'),
-            'v_th': ('v_thresh')
+            'v_leak': ('v_rest', lambda x: np.asscalar(x.detach().numpy())),
+            'v_reset': ('v_reset', lambda x: np.asscalar(x.detach().numpy())),
+            'v_th': ('v_thresh', lambda x: np.asscalar(x.detach().numpy()))
         }
     }
     #shape_pre, weights_kernel, strides, padding,
@@ -46,7 +46,8 @@ class Parser:
         }
     }
 
-    def __init__(self, model, dummy_data, pynn):
+    def __init__(self, model, dummy_data, pynn, timestep=1):
+        self.timestep = timestep
         self.pynn = pynn
         self.input_data = dummy_data
         self.x = None
@@ -186,12 +187,6 @@ class Parser:
         prjs = self.generate_pynn_projections_dicts(pops)
         return pops, prjs
 
-    def generate_pynn_objects(self, pops, prjs):
-        sim = self.pynn
-        sim.setup()
-
-        return pops, prjs
-
     def pynn_dict_to_object(self, obj_type, dictionary):
         if obj_type == 'population':
             return self.pynn.Population(**dictionary)
@@ -215,6 +210,14 @@ class Parser:
         tr = self.CONNECT_TRANSLATIONS[name]
         return self.parse_translations(layer_dict, tr)
 
+    def generate_pynn_objects(self, pops_dicts, projs_dicts):
+        sim = self.pynn
+        sim.setup(timestep=self.timestep)
+        pops = self.generate_pynn_populations(pops_dicts)
+        prjs = self.generate_pynn_projections(pops, projs_dicts)
+
+        return pops, prjs
+
     def generate_pynn_populations(self, pops_dicts):
         pops = {}
         for i, di in pops_dicts.items():
@@ -231,4 +234,4 @@ class Parser:
         return OrderedDict(pops)
 
     def generate_pynn_projections(self, pynn_pops, projs_dicts):
-        pass
+        return {}
