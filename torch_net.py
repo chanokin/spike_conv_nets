@@ -74,7 +74,7 @@ class DVSModelSimple2(pl.LightningModule):
     @property
     def layers(self):
         bs = [
-            self.block1, self.block2, self.block3, self.dense, self.score_dense
+            self.block1, self.block2, self.block3, self.dense, #self.score_dense
         ]
         lyrs = []
         for b in bs:
@@ -98,7 +98,6 @@ class DVSModelSimple2(pl.LightningModule):
         # for each frame
         for i in range(x.shape[1]):
             frame = x[:, i, :, :, :]
-
 
             out_block1, state_block1 = self.block1(frame, state_block1)  # 1/2
             out_block2, state_block2 = self.block2(out_block1, state_block2)  # 1/4
@@ -142,51 +141,57 @@ class DVSModelSimple2(pl.LightningModule):
         return torch.optim.Adam(self.parameters(), lr=1e-03, weight_decay=1e-5)
 
 
+width = height = 128
+n_class = 9
+n_in_channels = 2
 
-m = DVSModelSimple2(9, 2, 128, 128)
-dummy = torch.randn(1, 1, 2, 128, 128)
+m = DVSModelSimple2(n_class, n_in_channels, height, width)
+
+n_samples = 1
+n_frames_per_sample = 1
+dummy = torch.randn(n_samples, n_frames_per_sample, n_in_channels, height, width)
 parser = Parser(m, dummy, sim)
 pynn_pops_d, pynn_projs_d = parser.generate_pynn_dictionaries()
 
 # do pynn setup
 pynn_pops, pynn_projs = parser.generate_pynn_objects(pynn_pops_d, pynn_projs_d)
 
+
+# -------------------------------------------------------------------- #
+# -------------------------------------------------------------------- #
+# -------------------------------------------------------------------- #
 onnx_path = 'dvs.onnx'
 torch.onnx.export(m, dummy, onnx_path,
                   verbose=True, opset_version=11)
 
-# -------------------------------------------------------------------- #
-# -------------------------------------------------------------------- #
-# -------------------------------------------------------------------- #
-
-import onnx
-from onnx.tools.net_drawer import GetPydotGraph, GetOpNodeProducer
-import sys
-import os
-import matplotlib.pyplot as plt
-
-
-onnx_model = onnx.load(onnx_path)
-# print(onnx_model.SerializeToString())
-
-graph = onnx_model.graph
-node = graph.node
-
-# for n in node:
-#     print(n.name)
-
-onnx.checker.check_model(onnx_model)
-
-pydot_graph = GetPydotGraph(onnx_model.graph, name=onnx_model.graph.name, rankdir="TB",
-                            node_producer=GetOpNodeProducer("docstring"))
-
-dot_graph_fname = "graph.dot"
-pydot_graph.write_dot(dot_graph_fname)
-os.system('dot -O -Tpng {}'.format(dot_graph_fname))
-
-image = plt.imread("{}.png".format(dot_graph_fname))
-plt.imshow(image)
-plt.axis('off')
+# import onnx
+# from onnx.tools.net_drawer import GetPydotGraph, GetOpNodeProducer
+# import sys
+# import os
+# import matplotlib.pyplot as plt
+#
+#
+# onnx_model = onnx.load(onnx_path)
+# # print(onnx_model.SerializeToString())
+#
+# graph = onnx_model.graph
+# node = graph.node
+#
+# # for n in node:
+# #     print(n.name)
+#
+# onnx.checker.check_model(onnx_model)
+#
+# pydot_graph = GetPydotGraph(onnx_model.graph, name=onnx_model.graph.name, rankdir="TB",
+#                             node_producer=GetOpNodeProducer("docstring"))
+#
+# dot_graph_fname = "graph.dot"
+# pydot_graph.write_dot(dot_graph_fname)
+# os.system('dot -O -Tpng {}'.format(dot_graph_fname))
+#
+# image = plt.imread("{}.png".format(dot_graph_fname))
+# plt.imshow(image)
+# plt.axis('off')
 # plt.show()
 
 # -------------------------------------------------------------------- #
