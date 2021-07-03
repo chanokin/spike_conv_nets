@@ -24,14 +24,26 @@ class Parser:
         'Conv2dLICell': {
             'tau_mem_inv': ('tau_m', lambda x: 1./x),
             # 'tau_syn_inv': ('tau_syn', lambda x: 1./x),
-            'v_leak': ('v_rest', lambda x: x),
-            'v_reset': ('v_reset', lambda x: x),
-            'v_th': ('v_thresh', lambda x: x)
+            'v_leak': ('v_rest', ),
+            'v_reset': ('v_reset'),
+            'v_th': ('v_thresh')
         }
     }
+    #shape_pre, weights_kernel, strides, padding,
+                 # pooling=None, pool_stride=None,
     CONNECT_TRANSLATIONS = {
-        'AvgPool2D': {},
-        'Conv2D': {}
+        'AvgPool2d': {
+            'kernel_size': ('pooling'),
+            'stride': ('pool_stride')
+        },
+        'Conv2d': {
+            'in_shape': ('shape_pre'),
+            # this currently has the order out_channels, in_channels, rows, cols
+            # we need to test if it needs flipping as in tensorflow
+            'weight': ('weights_kernel', lambda x: x.detach().numpy()),
+            'stride': ('strides'),
+            'padding': ('padding'),
+        }
     }
 
     def __init__(self, model, dummy_data, pynn):
@@ -123,7 +135,7 @@ class Parser:
             }
             count += 1
 
-        return pops
+        return OrderedDict(pops)
 
     def generate_pynn_projections_dicts(self, pops):
         post = None
@@ -134,11 +146,19 @@ class Parser:
         last_i = 0
         conn_layers_dicts = []
         for i, d in self.layer_dicts.items():
+            if i == 0:
+                conn_layers_dicts.append(d)
+                continue
+
             n = d['name']
-            if n not in self.CELL_TYPES:
+            n0 = self.layer_dicts[last_i]['name']
+            comp_cell = "{}{}".format(n0, n)
+            last_i = i
+
+            if comp_cell not in self.CELL_TYPES:
                 conn_layers_dicts.append(d)
 
-            if n in self.CELL_TYPES:
+            if comp_cell in self.CELL_TYPES:
                 post = i
                 if pre == 0:
                     '''this means the first pre, a.k.a. the input'''
@@ -150,19 +170,16 @@ class Parser:
 
                 for j, c in enumerate(conn_layers_dicts):
                     nn = c['name']
-                    if 'avgpool2d' == nn.lower():
-                        pj.update(self.parse_pool_params(nn, c))
-                    elif 'conv2d' == nn.lower():
-                        pj.update(self.parse_conv_params(nn, c))
+                    if nn in self.CONNECT_TRANSLATIONS:
+                        pj.update(self.parse_conn_params(nn, c))
 
+                prjs[i] = pj
                 conn_layers_dicts[:] = []
                 pre = i
 
-
                 count += 1
 
-        return prjs
-
+        return OrderedDict(prjs)
 
     def generate_pynn_dictionaries(self):
         pops = self.generate_pynn_populations_dicts()
@@ -170,6 +187,9 @@ class Parser:
         return pops, prjs
 
     def generate_pynn_objects(self, pops, prjs):
+        sim = self.pynn
+        sim.setup()
+
         return pops, prjs
 
     def pynn_dict_to_object(self, obj_type, dictionary):
@@ -182,17 +202,18 @@ class Parser:
             proj_d['connector'] = conn
             return self.pynn.Projection(**proj_d)
 
+    def parse_translations(self, in_dict, translations):
+        trans = {v[0]: v[1](in_dict[k]) if len(v) == 2 else in_dict[k]
+                 for k, v in translations.items()}
+        return trans
+
     def parse_cell_parameters(self, name, layer_dict):
         tr = self.CELL_TRANSLATIONS[name]
-        params = {v[0]: v[1](layer_dict[k].detach().cpu().numpy())
-                  for k, v in tr.items()}
-        return params
+        return self.parse_translations(layer_dict, tr)
 
-    def parse_pool_params(self, name, layer_dict):
-        pass
-
-    def parse_conv_params(self, name, layer_dict):
-        pass
+    def parse_conn_params(self, name, layer_dict):
+        tr = self.CONNECT_TRANSLATIONS[name]
+        return self.parse_translations(layer_dict, tr)
 
     def generate_pynn_populations(self, pops_dicts):
         pops = {}
@@ -207,7 +228,7 @@ class Parser:
 
             pops[i] = ps
 
-        return pops
+        return OrderedDict(pops)
 
     def generate_pynn_projections(self, pynn_pops, projs_dicts):
         pass
