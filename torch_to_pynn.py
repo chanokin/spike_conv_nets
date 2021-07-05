@@ -174,6 +174,9 @@ class Parser:
                     if nn in self.CONNECT_TRANSLATIONS:
                         pj.update(self.parse_conn_params(nn, c))
 
+                    if 'conv2d' in nn.lower() or 'dense' in nn.lower():
+                        pj['name'] = nn
+
                 prjs[i] = pj
                 conn_layers_dicts[:] = []
                 pre = i
@@ -198,8 +201,13 @@ class Parser:
             return self.pynn.Projection(**proj_d)
 
     def parse_translations(self, in_dict, translations):
-        trans = {v[0]: v[1](in_dict[k]) if len(v) == 2 else in_dict[k]
-                 for k, v in translations.items()}
+        trans = {}
+        for k, v in translations.items():
+            if len(v) == 2:
+                trans[v[0]] = v[1](in_dict[k])
+            else:
+                trans[v] = in_dict[k]
+
         return trans
 
     def parse_cell_parameters(self, name, layer_dict):
@@ -210,11 +218,15 @@ class Parser:
         tr = self.CONNECT_TRANSLATIONS[name]
         return self.parse_translations(layer_dict, tr)
 
-    def generate_pynn_objects(self, pops_dicts, projs_dicts):
+    def parse_input_dicts(self, input_dicts):
+        return input_dicts
+
+    def generate_pynn_objects(self, input_dicts, pops_dicts, projs_dicts):
         sim = self.pynn
         sim.setup(timestep=self.timestep)
+        inputs = self.parse_input_dicts(input_dicts)
         pops = self.generate_pynn_populations(pops_dicts)
-        prjs = self.generate_pynn_projections(pops, projs_dicts)
+        prjs = self.generate_pynn_projections(inputs, pops, projs_dicts)
 
         return pops, prjs
 
@@ -233,5 +245,43 @@ class Parser:
 
         return OrderedDict(pops)
 
-    def generate_pynn_projections(self, pynn_pops, projs_dicts):
-        return {}
+    def generate_pynn_projections(self, inputs, pynn_pops, projs_dicts):
+        sim = self.pynn
+        prjs = {}
+        for i, pr in projs_dicts.items():
+            p = deepcopy(pr)
+            conn_type = p.pop('name').lower()
+            w_key = 'weights_kernel' if 'conv2d' in conn_type else 'weights'
+            pre = p.pop('pre')
+            post = p.pop('post')
+            ws = p.pop(w_key)
+            p['shape_pre'] = p['shape_pre'][2:]
+            n_pre = ws.shape[1]
+            n_post = ws.shape[0]
+            pre_pops = inputs if pre == 0 else pynn_pops[pre]
+
+            if pre == 0:
+                print('TODO: pre {} indicates the input, not implemented yet'.format(pre))
+                # continue
+
+            post_pops = pynn_pops[post]
+            pre_d = {}
+            for pre_i, pre_pop in enumerate(pre_pops):
+                post_d = {}
+                for post_i, post_pop in enumerate(post_pops):
+                    conn_d = deepcopy(p)
+                    conn_d[w_key] = ws[post_i, pre_i].copy()
+                    if 'conv2d' in conn_type:
+                        conn = sim.ConvolutionConnector(**conn_d)
+                    else:
+                        print('TODO: dense connector parsing not fully implemented')
+                        conn = sim.DensePoolConnector(**conn_d)
+                    label = '{}_from_{}[{}]_to_{}[{}]'.format(
+                                            conn_type, pre, pre_i, post, post_i)
+                    post_d[post_i] = sim.Projection(
+                        pre_pop, post_pop, conn, label=label)
+                pre_d[pre_i] = post_d
+
+            prjs[i] = pre_d
+
+        return prjs

@@ -141,7 +141,7 @@ class DVSModelSimple2(pl.LightningModule):
         return torch.optim.Adam(self.parameters(), lr=1e-03, weight_decay=1e-5)
 
 
-width = height = 128
+width = height = 32
 n_class = 9
 n_in_channels = 2
 
@@ -154,15 +154,16 @@ parser = Parser(m, dummy, sim)
 pynn_pops_d, pynn_projs_d = parser.generate_pynn_dictionaries()
 
 # do pynn setup
-pynn_pops, pynn_projs = parser.generate_pynn_objects(pynn_pops_d, pynn_projs_d)
+input_dict = {}
+pynn_pops, pynn_projs = parser.generate_pynn_objects(input_dict, pynn_pops_d, pynn_projs_d)
 
 
 # -------------------------------------------------------------------- #
 # -------------------------------------------------------------------- #
 # -------------------------------------------------------------------- #
-onnx_path = 'dvs.onnx'
-torch.onnx.export(m, dummy, onnx_path,
-                  verbose=True, opset_version=11)
+# onnx_path = 'dvs.onnx'
+# torch.onnx.export(m, dummy, onnx_path,
+#                   verbose=True, opset_version=11)
 
 # import onnx
 # from onnx.tools.net_drawer import GetPydotGraph, GetOpNodeProducer
