@@ -9,6 +9,9 @@ from norse.torch.module.lif import LIFCell
 from norse.torch.module.leaky_integrator import LICell
 import spynnaker8 as sim
 import pytorch_lightning as pl
+from pynn_object_serialisation.functions import (
+    intercept_simulator, restore_simulator_from_file
+)
 
 class DVSModelSimple2(pl.LightningModule):
     def __init__(
@@ -143,7 +146,7 @@ class DVSModelSimple2(pl.LightningModule):
 
 width = height = 32
 n_class = 9
-n_in_channels = 2
+n_in_channels = 1
 
 m = DVSModelSimple2(n_class, n_in_channels, height, width)
 
@@ -157,6 +160,9 @@ pynn_pops_d, pynn_projs_d = parser.generate_pynn_dictionaries()
 input_dict = {}
 pynn_pops, pynn_projs = parser.generate_pynn_objects(input_dict, pynn_pops_d, pynn_projs_d)
 
+intercept_simulator(sim, "test_torch_network")
+
+# sim.run(0)
 
 # -------------------------------------------------------------------- #
 # -------------------------------------------------------------------- #
