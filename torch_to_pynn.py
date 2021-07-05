@@ -46,8 +46,10 @@ class Parser:
         }
     }
 
-    def __init__(self, model, dummy_data, pynn, timestep=1):
+    def __init__(self, model, dummy_data, pynn, timestep=1, min_delay=1, max_delay=144):
         self.timestep = timestep
+        self.min_delay = min_delay
+        self.max_delay = max_delay
         self.pynn = pynn
         self.input_data = dummy_data
         self.x = None
@@ -223,7 +225,8 @@ class Parser:
 
     def generate_pynn_objects(self, input_dicts, pops_dicts, projs_dicts):
         sim = self.pynn
-        sim.setup(timestep=self.timestep)
+        sim.setup(timestep=self.timestep, min_delay=self.min_delay,
+                  max_delay=self.max_delay)
         inputs = self.parse_input_dicts(input_dicts)
         pops = self.generate_pynn_populations(pops_dicts)
         prjs = self.generate_pynn_projections(inputs, pops, projs_dicts)
