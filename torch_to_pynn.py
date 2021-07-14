@@ -17,7 +17,7 @@ class Parser:
     LICELL_KEYS = ('alpha', 'tau_mem_inv', 'tau_syn_inv',
                    'v_leak', 'v_reset', 'v_th')
     CELL_TYPES = {
-        'Conv2dLICell': 'IF_curr_exp_conv'
+        'Conv2dLICell': 'IF_curr_delta_conv'
     }
 
     CELL_TRANSLATIONS = {
