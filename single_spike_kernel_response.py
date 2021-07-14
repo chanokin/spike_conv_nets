@@ -20,10 +20,10 @@ print(kernel)
 
 # sys.exit()
 
-# sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
-# sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=2048)
+# sim.IF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=1024)
+# sim.IF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=2048)
 sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=50)
-# sim.NIF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=2048)
+# sim.NIF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=2048)
 sim.NIF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=50)
 sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=50)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=1024)

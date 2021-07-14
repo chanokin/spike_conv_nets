@@ -113,8 +113,8 @@ for k in kernels:
 
 # sys.exit()
 
-# sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
-# sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=2048)
+# sim.IF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=1024)
+# sim.IF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=2048)
 # sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=36)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=18)
 sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=512)
