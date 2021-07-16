@@ -73,7 +73,7 @@ src1 = sim.Population(n_input, sim.SpikeSourceArray,
 
 pooling = np.asarray([2, 2]) if pre_is_conv else 1
 pooling_stride = np.asarray([2, 2])
-pool_shape = sim.PoolDenseConnector.calc_post_pool_shape(
+pool_shape = sim.PoolDenseOrigConnector.calc_post_pool_shape(
                                     shape, pre_is_conv, pooling, pooling_stride)
 n_out = 23
 k_shape = np.asarray(
@@ -88,10 +88,10 @@ print(np.max(ws))
 print(np.max(ws * div))
 print()
 
-conn = sim.PoolDenseConnector(0, shape, ws, n_out, pooling, pooling_stride,
-                              pre_is_conv=pre_is_conv)
-conn1 = sim.PoolDenseConnector(0, shape, ws - 1.0, n_out, pooling, pooling_stride,
-                               pre_is_conv=pre_is_conv)
+conn = sim.PoolDenseOrigConnector(0, shape, ws, n_out, pooling, pooling_stride,
+                                  pre_is_conv=pre_is_conv)
+conn1 = sim.PoolDenseOrigConnector(0, shape, ws - 1.0, n_out, pooling, pooling_stride,
+                                   pre_is_conv=pre_is_conv)
 
 
 post_cfg = {
