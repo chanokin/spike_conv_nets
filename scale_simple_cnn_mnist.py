@@ -143,7 +143,7 @@ def run_network(start_char, n_digits, n_test=10000, scale=1.0):
             pool_stride = np.asarray(c['pool']['strides']) if pooling else None
             wshape = c.get('shape', None)
             strides = c.get('strides', None)
-            shape = sim.ConvolutionConnector.calculate_post_shape(
+            shape = sim.ConvolutionOrigConnector.calculate_post_shape(
                 pre_shape, kernel_shape,
                 padding=np.array([0, 0]),
                 stride=strides,
@@ -284,15 +284,15 @@ def run_network(start_char, n_digits, n_test=10000, scale=1.0):
                     # convolution instead of a correlation
                     w = np.flipud(np.fliplr(w))
                     wl.append(w)
-                    cn = sim.ConvolutionConnector(pre_shape, w, strides=strides,
-                                                  pooling=pool_area, pool_stride=pool_stride,
-                                                  most_significant_rows=most_significant_rows)
+                    cn = sim.ConvolutionOrigConnector(pre_shape, w, strides=strides,
+                                                      pooling=pool_area, pool_stride=pool_stride,
+                                                      most_significant_rows=most_significant_rows)
                     prj = sim.Projection(pre, post, cn, label=lbl)
                     projs[lbl] = prj
 
                 elif 'dense' in o.lower():
                     n_out = post.size
-                    sh_pre = sim.PoolDenseConnector.calc_post_pool_shape(
+                    sh_pre = sim.PoolDenseOrigConnector.calc_post_pool_shape(
                         pre_shape, pooling, pool_area, pool_stride)
                     size_pre = int(np.prod(sh_pre))
                     if 'conv2d' in o0.lower():
@@ -340,8 +340,8 @@ def run_network(start_char, n_digits, n_test=10000, scale=1.0):
                     #     ws[:, cidx] = norm_w(ws[:, cidx])
 
                     wl.append(ws)
-                    cn = sim.PoolDenseConnector(prei, pre_shape, ws, n_out, pool_area,
-                                                pool_stride, pre_is_conv=pre_is_conv)
+                    cn = sim.PoolDenseOrigConnector(prei, pre_shape, ws, n_out, pool_area,
+                                                    pool_stride, pre_is_conv=pre_is_conv)
 
                     prj = sim.Projection(pre, post, cn, label=lbl)
                     projs[lbl] = prj
