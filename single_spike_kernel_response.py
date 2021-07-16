@@ -22,9 +22,9 @@ print(kernel)
 
 # sim.IF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=1024)
 # sim.IF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=2048)
-sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=50)
+sim.IF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=50)
 # sim.NIF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=2048)
-sim.NIF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=50)
+sim.NIF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=50)
 sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=50)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=1024)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=100)
@@ -41,7 +41,7 @@ spike_times = [[1.0] if i == spike_idx else []
 src = sim.Population(n_input, sim.SpikeSourceArray,
                      {'spike_times': spike_times}, label='input spikes')
 
-conn = sim.ConvolutionConnector(in_shape, kernel, strides=stride)
+conn = sim.ConvolutionOrigConnector(in_shape, kernel, strides=stride)
 
 out_shape = conn.get_post_shape()
 out_size = int(np.prod(out_shape))
@@ -54,7 +54,7 @@ params = {
     # 'v_rest': 0.,
     # 'tau_m': 1.0,
 }
-output = sim.Population(out_size, sim.NIF_curr_exp_conv,
+output = sim.Population(out_size, sim.NIF_curr_delta_conv,
                          params, label="out")
 
 src.record('spikes')
