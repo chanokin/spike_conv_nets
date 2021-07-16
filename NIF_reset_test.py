@@ -18,7 +18,7 @@ params = {
     'v_reset': 0.,
     'v': 0.,
 }
-conn = sim.ConvolutionConnector(pre_shape, np.array([[w]]), strides=1)
+conn = sim.ConvolutionOrigConnector(pre_shape, np.array([[w]]), strides=1)
 post_shape = conn.get_post_shape()
 # post_shape = (1, 1)
 output = sim.Population(int(np.prod(post_shape)), sim.NIF_curr_exp_conv,
