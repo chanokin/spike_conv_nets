@@ -59,7 +59,7 @@ for s in src:
 # for s in src:
 #     s.record('spikes')
 
-conn = sim.ConvolutionConnector(shape, ws, strides=stride)
+conn = sim.ConvolutionOrigConnector(shape, ws, strides=stride)
 shape_out = conn.get_post_shape()
 sum_inputs = np.zeros(shape_out)
 hh, hw = k_shape // 2

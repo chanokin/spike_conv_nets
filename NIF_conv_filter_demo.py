@@ -113,7 +113,7 @@ else:
     src = sim.Population(n_input, sim.SpikeSourcePoisson,
                          {'rate': rates}, label='input spikes')
 
-conns = {k: sim.ConvolutionConnector(shape, kernels[k], strides=stride)
+conns = {k: sim.ConvolutionOrigConnector(shape, kernels[k], strides=stride)
          for k in kernels}
 
 as_post = {k: {r: {c: conns[k].pre_as_post(r, c)

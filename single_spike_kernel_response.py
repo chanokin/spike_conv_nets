@@ -41,7 +41,7 @@ spike_times = [[1.0] if i == spike_idx else []
 src = sim.Population(n_input, sim.SpikeSourceArray,
                      {'spike_times': spike_times}, label='input spikes')
 
-conn = sim.ConvolutionConnector(in_shape, kernel, strides=stride)
+conn = sim.ConvolutionOrigConnector(in_shape, kernel, strides=stride)
 
 out_shape = conn.get_post_shape()
 out_size = int(np.prod(out_shape))

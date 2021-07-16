@@ -275,7 +275,7 @@ class Parser:
                     conn_d = deepcopy(p)
                     conn_d[w_key] = ws[post_i, pre_i].copy()
                     if 'conv2d' in conn_type:
-                        conn = sim.ConvolutionConnector(**conn_d)
+                        conn = sim.ConvolutionOrigConnector(**conn_d)
                     else:
                         print('TODO: dense connector parsing not fully implemented')
                         conn = sim.DensePoolConnector(**conn_d)
