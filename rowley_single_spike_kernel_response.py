@@ -21,7 +21,9 @@ print(kernel)
 run_time = 4.
 
 sim.setup(timestep=1.)
-
+machine = sim.get_machine()
+# machine.ignore_chips()
+chip11 = machine.get_chip_at(1,1)
 spike_idx = fe.encode_coords((in_shape[0] // 2), (in_shape[1] // 2),
                              in_shape[1], in_shape[0], ROWS_AS_MSB)
 spike_times = [[1.0] if i == spike_idx else []
@@ -38,8 +40,9 @@ conn = sim.ConvolutionConnector(kernel)
 out_shape = conn.get_post_shape(in_shape)
 out_size = int(np.prod(out_shape))
 # out_size = fe.max_coord_size(out_shape[1], out_shape[0], ROWS_AS_MSB)
-
-output = sim.Population(out_size, sim.NIF_curr_delta,
+out_type = sim.NIF_curr_delta
+# out_type = sim.IF_curr_exp
+output = sim.Population(out_size, out_type,
                         {'v': 0, 'v_thresh': 1, 'v_reset': 0},
                         structure=Grid2D(out_shape[1]/out_shape[0]),
                         label="out"
