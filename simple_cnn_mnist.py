@@ -11,6 +11,7 @@ from field_encoding import ROWS_AS_MSB
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 from sklearn.utils import check_random_state
+from pyNN.space import Grid2D
 
 # def num_and_bits(shape):
 #     bits = np.ceil(np.log2(shape)).astype('int')
@@ -87,14 +88,14 @@ def run_network(start_char, n_digits, n_test=10000):
     #
     # plt.show()
 
-    MAX_N_DENSE = 128
-    MAX_N_CONV = 512
-    # sim.extra_models.SpikeSourcePoissonVariable.set_model_max_atoms_per_core(512)
-    sim.IF_curr_exp_conv.set_model_max_atoms_per_core(MAX_N_CONV)
-    sim.NIF_curr_exp_conv.set_model_max_atoms_per_core(MAX_N_CONV)
-    # sim.IF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=256)
-    sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(MAX_N_DENSE)
-    sim.NIF_curr_exp_pool_dense.set_model_max_atoms_per_core(MAX_N_DENSE)
+    # MAX_N_DENSE = 128
+    # MAX_N_CONV = 512
+    # # sim.extra_models.SpikeSourcePoissonVariable.set_model_max_atoms_per_core(512)
+    # sim.IF_curr_exp_conv.set_model_max_atoms_per_core(MAX_N_CONV)
+    sim.NIF_curr_delta.set_model_max_atoms_per_core(256)
+    # # sim.IF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=256)
+    # sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(MAX_N_DENSE)
+    # sim.NIF_curr_exp_pool_dense.set_model_max_atoms_per_core(MAX_N_DENSE)
 
     sim.setup(timestep=1.)
 
@@ -104,8 +105,9 @@ def run_network(start_char, n_digits, n_test=10000):
     shape_in = np.asarray([28, 28])
     n_in = int(np.prod(shape_in))
     in_ids = np.arange(0, n_in)
-    n_in = fe.max_coord_size(shape=shape_in, most_significant_rows=ROWS_AS_MSB)
-    xy_in_ids = fe.convert_ids(in_ids, shape=shape_in, most_significant_rows=ROWS_AS_MSB)
+    xy_in_ids = in_ids
+    # n_in = fe.max_coord_size(shape=shape_in, most_significant_rows=ROWS_AS_MSB)
+    # xy_in_ids = fe.convert_ids(in_ids, shape=shape_in, most_significant_rows=ROWS_AS_MSB)
 
     digit_duration = 500.0  # ms
     digit_rate = 100.0  # hz
@@ -127,6 +129,7 @@ def run_network(start_char, n_digits, n_test=10000):
             n_in,  # number of sources
             sim.extra_models.SpikeSourcePoissonVariable,  # source type
             in_params,
+            structure=Grid2D(shape_in[1] / shape_in[0]),
             label='mnist',
             additional_parameters={'seed': 24534}
         )]
@@ -145,8 +148,8 @@ def run_network(start_char, n_digits, n_test=10000):
     }
     local_thresh = bool(0)
     use_lif = bool(0)
-    conv_cell_type = sim.IF_curr_exp_conv if use_lif else sim.NIF_curr_exp_conv
-    dense_cell_type = sim.IF_curr_exp_pool_dense if use_lif else sim.NIF_curr_exp_pool_dense
+    cell_type = sim.IF_curr_exp if use_lif else sim.NIF_curr_delta
+    # dense_cell_type = sim.IF_curr_exp_pool_dense if use_lif else sim.NIF_curr_delta
     for i, o in enumerate(order):
         if i == 0:
             continue
@@ -159,9 +162,10 @@ def run_network(start_char, n_digits, n_test=10000):
             v = ps.pop('v')
             ps['v_thresh'] = thresholds[o] if local_thresh else par['threshold']
             n = int(np.prod(shape))
-            n = fe.max_coord_size(shape=shape, most_significant_rows=ROWS_AS_MSB)
+            # n = fe.max_coord_size(shape=shape, most_significant_rows=ROWS_AS_MSB)
             # print(o, n, shape, chans)
-            pop = [sim.Population(n, conv_cell_type, ps,
+            pop = [sim.Population(n, cell_type, ps,
+                                  structure=Grid2D(shape[1] / shape[0]),
                                   label="{}_chan_{}".format(o, ch))
                    for ch in range(chans)]
 
@@ -169,6 +173,8 @@ def run_network(start_char, n_digits, n_test=10000):
                 p.set(v=v)
         elif 'dense' in o.lower():
             shape = par['shape'][0:2]
+            if len(shape) == 1:
+                shape = (shape[0], 1)
             ps = def_params.copy()
             v = ps.pop('v')
             ps['v_thresh'] = thresholds[o] if local_thresh else par['threshold']
@@ -184,7 +190,8 @@ def run_network(start_char, n_digits, n_test=10000):
             #     chans = 4
             #     n = n // chans
 
-            pop = [sim.Population(n, dense_cell_type, ps,
+            pop = [sim.Population(n, cell_type, ps,
+                                  structure=Grid2D(shape[1] / shape[0]),
                                   label="{}_chan_{}".format(o, ch))
                    for ch in range(chans)]
             for p in pop:
@@ -284,16 +291,17 @@ def run_network(start_char, n_digits, n_test=10000):
                     # convolution instead of a correlation
                     w = np.flipud(np.fliplr(w))
                     wl.append(w)
-                    cn = sim.ConvolutionOrigConnector(pre_shape, w, strides=strides,
-                                                      pooling=pool_area, pool_stride=pool_stride,
-                                                      most_significant_rows=most_significant_rows)
-                    prj = sim.Projection(pre, post, cn, label=lbl)
+                    cn = sim.ConvolutionConnector(w, strides=strides,
+                                                  pool_shape=pool_area,
+                                                  pool_stride=pool_stride,
+                                                  )
+                    prj = sim.Projection(pre, post, cn, sim.Convolution(), label=lbl)
                     projs[lbl] = prj
 
                 elif 'dense' in o.lower():
                     n_out = post.size
-                    sh_pre = sim.PoolDenseOrigConnector.calc_post_pool_shape(
-                                pre_shape, pooling, pool_area, pool_stride)
+                    sh_pre = sim.PoolDenseConnector.get_post_pool_shape(
+                                            pre_shape, pool_area, pool_stride)
                     size_pre = int(np.prod(sh_pre))
                     if 'conv2d' in o0.lower():
                         pre_is_conv = True
@@ -340,10 +348,9 @@ def run_network(start_char, n_digits, n_test=10000):
                     #     ws[:, cidx] = norm_w(ws[:, cidx])
 
                     wl.append(ws)
-                    cn = sim.PoolDenseOrigConnector(prei, pre_shape, ws, n_out, pool_area,
-                                                    pool_stride, pre_is_conv=pre_is_conv)
+                    cn = sim.PoolDenseConnector(ws, pool_area, pool_stride)
 
-                    prj = sim.Projection(pre, post, cn, label=lbl)
+                    prj = sim.Projection(pre, post, cn, sim.PoolDense(), label=lbl)
                     projs[lbl] = prj
 
             kernels[o] = wl
