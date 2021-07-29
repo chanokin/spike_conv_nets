@@ -24,8 +24,9 @@ sim.setup(timestep=1.)
 machine = sim.get_machine()
 # machine.ignore_chips()
 chip11 = machine.get_chip_at(1,1)
-spike_idx = fe.encode_coords((in_shape[0] // 2), (in_shape[1] // 2),
-                             in_shape[1], in_shape[0], ROWS_AS_MSB)
+# spike_idx = fe.encode_coords((in_shape[0] // 2), (in_shape[1] // 2),
+#                              in_shape[1], in_shape[0], ROWS_AS_MSB)
+spike_idx = (in_shape[0] // 2) * in_shape[1] + (in_shape[1] // 2)
 spike_times = [[1.0] if i == spike_idx else []
                for i in range(n_input)]
 
@@ -77,8 +78,9 @@ sim.end()
 
 v = neo.segments[0].filter(name='v')[0]
 
-vmin = 0
-vmax = kernel.max()
+
+vmax = np.max(np.abs(kernel))
+vmin = -vmax
 print(v.shape)
 for t, vt in enumerate(v):
     img = np.zeros(out_shape)
@@ -88,7 +90,7 @@ for t, vt in enumerate(v):
         # print(i, r, c)
         # if r >= out_shape[0] or c >= out_shape[1]:
         #     continue
-        r, c = i // out_shape[0], i % out_shape[0]
+        r, c = i // out_shape[1], i % out_shape[1]
         img[r, c] = vv
 
     plt.figure()
