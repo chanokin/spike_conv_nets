@@ -40,10 +40,23 @@ conn = sim.ConvolutionConnector(kernel)
 out_shape = conn.get_post_shape(in_shape)
 out_size = int(np.prod(out_shape))
 # out_size = fe.max_coord_size(out_shape[1], out_shape[0], ROWS_AS_MSB)
-out_type = sim.NIF_curr_delta
-# out_type = sim.IF_curr_exp
-output = sim.Population(out_size, out_type,
-                        {'v': 0, 'v_thresh': 1, 'v_reset': 0},
+
+out_type = sim.NIF_curr_delta if bool(1) else sim.IF_curr_exp
+params = {
+    'v': 0,
+    'v_thresh': 1,
+    'v_reset': 0,
+}
+
+if out_type is sim.IF_curr_exp:
+    params['v_rest'] = 0
+    params['tau_m'] = 20
+    params['cm'] = 0.1
+    params['tau_syn_E'] = 1
+    params['tau_syn_I'] = 1
+
+
+output = sim.Population(out_size, out_type, params,
                         structure=Grid2D(out_shape[1]/out_shape[0]),
                         label="out"
                        )
@@ -70,13 +83,13 @@ print(v.shape)
 for t, vt in enumerate(v):
     img = np.zeros(out_shape)
     # img[:] = vt.reshape(out_shape)
-    for i, v in enumerate(vt):
-        r, c = fe.decode_ids(i, most_significant_rows=ROWS_AS_MSB, shape=out_shape)
-        print(i, r, c)
-        if r >= out_shape[0] or c >= out_shape[1]:
-            continue
-
-        img[r, c] = v
+    for i, vv in enumerate(vt):
+        # r, c = fe.decode_ids(i, most_significant_rows=ROWS_AS_MSB, shape=out_shape)
+        # print(i, r, c)
+        # if r >= out_shape[0] or c >= out_shape[1]:
+        #     continue
+        r, c = i // out_shape[0], i % out_shape[0]
+        img[r, c] = vv
 
     plt.figure()
     ax = plt.subplot(1, 1, 1)
@@ -99,3 +112,5 @@ plt.show()
 
 print()
 np.testing.assert_array_almost_equal(kernel, ctr, decimal=2)
+print("np.testing.assert_array_almost_equal(kernel, ctr, decimal=2) passed")
+
