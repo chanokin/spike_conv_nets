@@ -5,10 +5,19 @@ import cv2
 import matplotlib.pyplot as plt
 import sys
 import field_encoding as fe
-
+from copy import deepcopy
 ROWS_AS_MSB = bool(1)
 VISUALIZE = bool(0)
-in_shape = (11, 11)
+def to_pynn_shape(shape):
+    s = [x for x in shape]
+    if len(s):
+        s[0] = shape[1]
+        s[1] = shape[0]
+
+    return tuple(s)
+
+
+in_shape = (11, 19)
 n_input = int(np.prod(in_shape))
 # n_input = fe.max_coord_size(in_shape[1], in_shape[0], ROWS_AS_MSB)
 
@@ -20,19 +29,21 @@ print(kernel)
 
 run_time = 4.
 
+
 sim.setup(timestep=1.)
-machine = sim.get_machine()
-# machine.ignore_chips()
-chip11 = machine.get_chip_at(1,1)
+
+sim.set_number_of_neurons_per_core(sim.NIF_curr_delta, (8, 8))
+
 # spike_idx = fe.encode_coords((in_shape[0] // 2), (in_shape[1] // 2),
 #                              in_shape[1], in_shape[0], ROWS_AS_MSB)
 spike_idx = (in_shape[0] // 2) * in_shape[1] + (in_shape[1] // 2)
 spike_times = [[1.0] if i == spike_idx else []
                for i in range(n_input)]
 
+in_shape_pynn = to_pynn_shape(in_shape)
 src = sim.Population(n_input, sim.SpikeSourceArray,
                      {'spike_times': spike_times},
-                     structure=Grid2D(in_shape[1]/in_shape[0]),
+                     structure=Grid2D(in_shape_pynn[0]/in_shape_pynn[1]),
                      label='input spikes'
                     )
 
@@ -56,9 +67,9 @@ if out_type is sim.IF_curr_exp:
     params['tau_syn_E'] = 1
     params['tau_syn_I'] = 1
 
-
+out_shape_pynn = to_pynn_shape(out_shape)
 output = sim.Population(out_size, out_type, params,
-                        structure=Grid2D(out_shape[1]/out_shape[0]),
+                        structure=Grid2D(out_shape_pynn[0]/out_shape_pynn[1]),
                         label="out"
                        )
 output.set(v=0)
@@ -101,8 +112,9 @@ for t, vt in enumerate(v):
 plt.show()
 # import plot_conv_filter_demo
 dko = np.abs(np.asarray(out_shape) - np.asarray(k_shape))
-off = dko[0] // 2
-ctr = img[off:-off, off:-off]
+off0 = dko[0] // 2
+off1 = dko[1] // 2
+ctr = img[off0:-off0, off1:-off1]
 diff = kernel - ctr
 plt.figure()
 ax = plt.subplot(1, 1, 1)

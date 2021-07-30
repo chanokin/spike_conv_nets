@@ -11,7 +11,10 @@ from field_encoding import ROWS_AS_MSB
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 from sklearn.utils import check_random_state
-from pyNN.space import Grid2D
+from pyNN.space import Line, Grid2D
+
+H, W = 0, 1
+ROWS, COLS = H, W
 
 # def num_and_bits(shape):
 #     bits = np.ceil(np.log2(shape)).astype('int')
@@ -92,7 +95,7 @@ def run_network(start_char, n_digits, n_test=10000):
     # MAX_N_CONV = 512
     # # sim.extra_models.SpikeSourcePoissonVariable.set_model_max_atoms_per_core(512)
     # sim.IF_curr_exp_conv.set_model_max_atoms_per_core(MAX_N_CONV)
-    sim.NIF_curr_delta.set_model_max_atoms_per_core(256)
+    sim.NIF_curr_delta.set_model_max_atoms_per_core(64)
     # # sim.IF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=256)
     # sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(MAX_N_DENSE)
     # sim.NIF_curr_exp_pool_dense.set_model_max_atoms_per_core(MAX_N_DENSE)
@@ -129,7 +132,7 @@ def run_network(start_char, n_digits, n_test=10000):
             n_in,  # number of sources
             sim.extra_models.SpikeSourcePoissonVariable,  # source type
             in_params,
-            structure=Grid2D(shape_in[1] / shape_in[0]),
+            structure=Grid2D(shape_in[W] / shape_in[H]),
             label='mnist',
             additional_parameters={'seed': 24534}
         )]
@@ -165,7 +168,7 @@ def run_network(start_char, n_digits, n_test=10000):
             # n = fe.max_coord_size(shape=shape, most_significant_rows=ROWS_AS_MSB)
             # print(o, n, shape, chans)
             pop = [sim.Population(n, cell_type, ps,
-                                  structure=Grid2D(shape[1] / shape[0]),
+                                  structure=Grid2D(shape[W] / shape[H]),
                                   label="{}_chan_{}".format(o, ch))
                    for ch in range(chans)]
 
@@ -191,7 +194,7 @@ def run_network(start_char, n_digits, n_test=10000):
             #     n = n // chans
 
             pop = [sim.Population(n, cell_type, ps,
-                                  structure=Grid2D(shape[1] / shape[0]),
+                                  structure=Grid2D(shape[W]/shape[H]),
                                   label="{}_chan_{}".format(o, ch))
                    for ch in range(chans)]
             for p in pop:
