@@ -7,8 +7,22 @@ from struct import pack
 from time import sleep
 from spinn_front_end_common.utilities.database import DatabaseConnection
 
+send_fake_spikes = False
+
+# Used if send_fake_spikes is True
 sleep_time = 0.1
 n_packets = 5
+# IP_ADDR = "172.16.223.14"
+IP_ADDR = "172.16.223.2"
+PORT = 10000
+
+# Run time if send_fake_spikes is False
+run_time = 60000
+
+if send_fake_spikes:
+    run_time = (n_packets + 1) * sleep_time * 1000
+
+# Constants
 P_SHIFT = 15
 Y_SHIFT = 0
 X_SHIFT = 16
@@ -18,12 +32,10 @@ SUB_WIDTH = 32
 SUB_HEIGHT = 16
 WEIGHT = 5
 
+
 def send_retina_input():
     """ This is used to send random input to the Ethernet listening in SPIF
     """
-    # IP_ADDR = "172.16.223.14"
-    IP_ADDR = "172.16.223.2"
-    PORT = 10000
     NO_TIMESTAMP = 0x80000000
     min_x = 0
     min_y = 0
@@ -40,15 +52,14 @@ def send_retina_input():
             x = randint(min_x, max_x)
             y = randint(min_y, max_y)
             packed = (
-                NO_TIMESTAMP + (polarity << P_SHIFT) + 
-                (y << Y_SHIFT) + (x << X_SHIFT))
-            print(f"Sending x={x}, y={y}, polarity={polarity}, packed={hex(packed)}")
+                    NO_TIMESTAMP + (polarity << P_SHIFT) +
+                    (y << Y_SHIFT) + (x << X_SHIFT))
+            print(
+                f"Sending x={x}, y={y}, polarity={polarity}, packed={hex(packed)}")
             data += pack("<I", packed)
         sock.sendto(data, (IP_ADDR, PORT))
         sleep(sleep_time)
 
-# This is only used with the above to send data to the Ethernet
-connection = DatabaseConnection(send_retina_input, local_port=None)
 
 # Set up PyNN
 p.setup(1.0)
@@ -56,24 +67,31 @@ p.setup(1.0)
 # Set the number of neurons per core to a rectangle (creates 512 neurons per core)
 p.set_number_of_neurons_per_core(p.IF_curr_exp, (SUB_WIDTH, SUB_HEIGHT))
 
-# This is used with the connection so that it starts sending when the simulation
-# starts
-p.external_devices.add_database_socket_address(
-    None, connection.local_port, None)
+if send_fake_spikes:
+    # This is only used with the above to send data to the Ethernet
+    connection = DatabaseConnection(send_retina_input, local_port=None)
+
+    # This is used with the connection so that it starts sending when the simulation
+    # starts
+    p.external_devices.add_database_socket_address(
+        None, connection.local_port, None)
 
 # This is our convolution connector.  This one doesn't do much!
-conn = p.ConvolutionConnector([[WEIGHT, WEIGHT, WEIGHT], 
+conn = p.ConvolutionConnector([[WEIGHT, WEIGHT, WEIGHT],
                                [WEIGHT, WEIGHT, WEIGHT],
                                [WEIGHT, WEIGHT, WEIGHT]], padding=(1, 1))
 
 # This is our external retina device connected to SPIF
 dev = p.Population(None, p.external_devices.SPIFRetinaDevice(
-    base_key=0, width=WIDTH, height=HEIGHT, sub_width=SUB_WIDTH, sub_height=SUB_HEIGHT,
+    base_key=0, width=WIDTH, height=HEIGHT, sub_width=SUB_WIDTH,
+    sub_height=SUB_HEIGHT,
     input_x_shift=X_SHIFT, input_y_shift=Y_SHIFT))
-    
+
 # Create some convolutional "layers" (just 2, with 1 convolution each here)
-pop = p.Population(WIDTH * HEIGHT, p.IF_curr_exp(), structure=Grid2D(WIDTH / HEIGHT))
-pop_2 = p.Population(WIDTH * HEIGHT, p.IF_curr_exp(), structure=Grid2D(WIDTH / HEIGHT))
+pop = p.Population(WIDTH * HEIGHT, p.IF_curr_exp(),
+                   structure=Grid2D(WIDTH / HEIGHT))
+pop_2 = p.Population(WIDTH * HEIGHT, p.IF_curr_exp(),
+                     structure=Grid2D(WIDTH / HEIGHT))
 
 # Record the spikes so we know what happened
 pop.record("spikes")
@@ -85,7 +103,7 @@ p.Projection(dev, pop, conn, p.Convolution())
 p.Projection(pop, pop_2, conn, p.Convolution())
 
 # Run the simulation for long enough for packets to be sent
-p.run((n_packets + 1) * sleep_time * 1000)
+p.run(run_time)
 
 # Get out the spikes
 spikes = pop.get_data("spikes").segments[0].spiketrains
@@ -94,9 +112,9 @@ spikes_2 = pop_2.get_data("spikes").segments[0].spiketrains
 # Tell the software we are done with the board
 p.end()
 
-# Check which spikes has been received
+# Check which spikes have been received
 for i in range(len(spikes)):
     if len(spikes[i]) > 0 or len(spikes_2[i]) > 0:
-        x = i % HEIGHT
-        y = i // HEIGHT
+        x = i % WIDTH
+        y = i // WIDTH
         print(f"{x}, {y} = {spikes[i]}; {spikes_2[i]}")
