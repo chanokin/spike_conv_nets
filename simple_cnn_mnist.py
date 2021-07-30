@@ -152,7 +152,10 @@ def run_network(start_char, n_digits, n_test=10000):
     local_thresh = bool(0)
     use_lif = bool(0)
     cell_type = sim.IF_curr_exp if use_lif else sim.NIF_curr_delta
-    # dense_cell_type = sim.IF_curr_exp_pool_dense if use_lif else sim.NIF_curr_delta
+    # dense_cell_type = sim.IF_curr_exp_dense if use_lif else sim.NIF_curr_delta
+    cell_type_dense = sim.NIF_curr_delta_dense
+    sim.set_number_of_neurons_per_core(cell_type_dense, 6)
+
     for i, o in enumerate(order):
         if i == 0:
             continue
@@ -193,7 +196,7 @@ def run_network(start_char, n_digits, n_test=10000):
             #     chans = 4
             #     n = n // chans
 
-            pop = [sim.Population(n, cell_type, ps,
+            pop = [sim.Population(n, cell_type_dense, ps,
                                   structure=Grid2D(shape[W]/shape[H]),
                                   label="{}_chan_{}".format(o, ch))
                    for ch in range(chans)]
@@ -257,7 +260,6 @@ def run_network(start_char, n_digits, n_test=10000):
             new_w /= v
 
         return new_w
-
 
     for i, o in enumerate(order):
         if i == 0:
