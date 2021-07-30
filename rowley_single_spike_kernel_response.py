@@ -8,6 +8,8 @@ import field_encoding as fe
 from copy import deepcopy
 ROWS_AS_MSB = bool(1)
 VISUALIZE = bool(0)
+
+
 def to_pynn_shape(shape):
     s = [x for x in shape]
     if len(s):
@@ -17,7 +19,11 @@ def to_pynn_shape(shape):
     return tuple(s)
 
 
-in_shape = (11, 19)
+def pynn_aspect_ratio(shape):
+    return float(shape[1]) / float(shape[0])
+
+
+in_shape = (11, 15)
 n_input = int(np.prod(in_shape))
 # n_input = fe.max_coord_size(in_shape[1], in_shape[0], ROWS_AS_MSB)
 
@@ -32,7 +38,7 @@ run_time = 4.
 
 sim.setup(timestep=1.)
 
-sim.set_number_of_neurons_per_core(sim.NIF_curr_delta, (8, 8))
+sim.set_number_of_neurons_per_core(sim.NIF_curr_delta, (4, 4))
 
 # spike_idx = fe.encode_coords((in_shape[0] // 2), (in_shape[1] // 2),
 #                              in_shape[1], in_shape[0], ROWS_AS_MSB)
@@ -40,10 +46,9 @@ spike_idx = (in_shape[0] // 2) * in_shape[1] + (in_shape[1] // 2)
 spike_times = [[1.0] if i == spike_idx else []
                for i in range(n_input)]
 
-in_shape_pynn = to_pynn_shape(in_shape)
 src = sim.Population(n_input, sim.SpikeSourceArray,
                      {'spike_times': spike_times},
-                     structure=Grid2D(in_shape_pynn[0]/in_shape_pynn[1]),
+                     structure=Grid2D(pynn_aspect_ratio(in_shape)),
                      label='input spikes'
                     )
 
@@ -67,9 +72,8 @@ if out_type is sim.IF_curr_exp:
     params['tau_syn_E'] = 1
     params['tau_syn_I'] = 1
 
-out_shape_pynn = to_pynn_shape(out_shape)
 output = sim.Population(out_size, out_type, params,
-                        structure=Grid2D(out_shape_pynn[0]/out_shape_pynn[1]),
+                        structure=Grid2D(pynn_aspect_ratio(out_shape)),
                         label="out"
                        )
 output.set(v=0)
