@@ -154,7 +154,7 @@ def run_network(start_char, n_digits, n_test=10000):
     cell_type = sim.IF_curr_exp if use_lif else sim.NIF_curr_delta
     # dense_cell_type = sim.IF_curr_exp_dense if use_lif else sim.NIF_curr_delta
     cell_type_dense = sim.NIF_curr_delta_dense
-    sim.set_number_of_neurons_per_core(cell_type_dense, 6)
+    sim.set_number_of_neurons_per_core(cell_type_dense, 32)
 
     for i, o in enumerate(order):
         if i == 0:
