@@ -45,7 +45,8 @@ sim.set_number_of_neurons_per_core(sim.NIF_curr_delta_dense, (4, 4))
 spike_idx = (in_shape[0] // 2) * in_shape[1] + (in_shape[1] // 2)
 spike_times = [[1.0] if i == spike_idx else []
                for i in range(n_input)]
-
+print(spike_idx)
+print(spike_times)
 src = sim.Population(n_input, sim.SpikeSourceArray,
                      {'spike_times': spike_times},
                      structure=Grid2D(pynn_aspect_ratio(in_shape)),
@@ -115,20 +116,41 @@ for t, vt in enumerate(v):
     plt.colorbar(im)
 plt.show()
 # import plot_conv_filter_demo
-dko = np.abs(np.asarray(out_shape) - np.asarray(k_shape))
-off0 = dko[0] // 2
-off1 = dko[1] // 2
-ctr = img[off0:-off0, off1:-off1]
-diff = kernel - ctr
+w_row = kernel[spike_idx, :]
+diff = w_row - img.flatten()
+
 plt.figure()
 ax = plt.subplot(1, 1, 1)
-ax.set_title("Difference between output centre and kernel")
-im = plt.imshow(diff, vmin=-vmax, vmax=vmax)
+ax.set_title("Weight matrix")
+im = plt.imshow(kernel)
+plt.colorbar(im)
+plt.show()
+
+# vmax = np.max(np.abs(diff))
+plt.figure(figsize=(5, 15))
+ax = plt.subplot(3, 1, 1)
+ax.set_title("Weights")
+im = plt.imshow(w_row.reshape(out_shape),
+                vmin=-vmax, vmax=vmax
+                )
+plt.colorbar(im)
+ax = plt.subplot(3, 1, 2)
+ax.set_title("Output")
+im = plt.imshow(img,
+                vmin=-vmax, vmax=vmax
+                )
+plt.colorbar(im)
+ax = plt.subplot(3, 1, 3)
+ax.set_title("Difference")
+im = plt.imshow(diff.reshape(out_shape),
+                vmin=-vmax, vmax=vmax
+                )
 plt.colorbar(im)
 
 plt.show()
 
 print()
-np.testing.assert_array_almost_equal(kernel, ctr, decimal=2)
+print(diff)
+np.testing.assert_array_almost_equal(w_row, img.flatten(), decimal=2)
 print("np.testing.assert_array_almost_equal(kernel, ctr, decimal=2) passed")
 

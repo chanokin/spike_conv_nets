@@ -16,12 +16,12 @@ mask = fe.generate_mask(n_bits[1])
 
 neos = data['neos'].item()
 out_shapes = data['out_shapes'].item()
-out_aug_shapes = {k: fe.get_augmented_shape(out_shapes[k])
-                  for k in out_shapes}
+# out_aug_shapes = {k: fe.get_augmented_shape(out_shapes[k])
+#                   for k in out_shapes}
 k_shape = data['k_shape']
 stride = data['stride']
 name = data['input_name']
-as_post = data['as_post'].item()
+# as_post = data['as_post'].item()
 
 # print(neos)
 
@@ -53,7 +53,7 @@ for i, k in enumerate(neos):
         plt.plot(times, (j + 0.2 * i) * np.ones_like(times), '|',
                  markersize=5., color=colors[k])
 
-plt.savefig("{}_raster_conv_filter_demo.png".format(name), dpi=300)
+plt.savefig("{}_raster_conv_filter_demo.png".format(k), dpi=300)
 plt.show()
 # sys.exit(0)
 
@@ -72,7 +72,7 @@ vmin = -vmax
 # vmin = None
 # vmax = None
 in_img = np.zeros(shape)
-out_imgs = {k: np.zeros(out_aug_shapes[k]) for k in out_aug_shapes}
+out_imgs = {k: np.zeros(out_shapes[k]) for k in out_shapes}
 fade = 0.3
 cmap = 'hot'
 # cmap = 'seismic_r'
@@ -103,13 +103,13 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
         s = neos[k].segments[0].spiketrains
         voltages = neos[k].segments[0].filter(name='v')[0]
 
-        shp = shape if k == 'input' else out_aug_shapes[k]
+        shp = shape if k == 'input' else out_shapes[k]
         w = shp[1]
         vidx = tidx+1 if tidx+1 < len(voltages) else tidx
         vs = voltages[vidx]
         for nid, v in enumerate(vs):
             row, col = nid // w, nid % w
-            row, col = fe.decode_ids(nid, shp[1], shp[0], True)
+            # row, col = fe.decode_ids(nid, shp[1], shp[0], True)
 
             # row += k_shape[0] // 2
             # col += k_shape[1] // 2
@@ -123,14 +123,14 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
         # pos.x0 -= dx
         # ax.set_position([pos.x0, pos.y0,
         #                  pos.width, pos.height])
-        if np.any(out_imgs[k]):
-            import sys
-            print(k)
-            for r in out_imgs[k]:
-                for v in r:
-                    sys.stdout.write("{:.6f}\t".format(v))
-                sys.stdout.write("\n")
-            sys.stdout.write("\n")
+        # if np.any(out_imgs[k]):
+        #     import sys
+        #     print(k)
+        #     for r in out_imgs[k]:
+        #         for v in r:
+        #             sys.stdout.write("{:.6f}\t".format(v))
+        #         sys.stdout.write("\n")
+        #     sys.stdout.write("\n")
 
             # print(out_imgs[k])
         im = ax.imshow(out_imgs[k], cmap=cmap, vmin=vmin, vmax=vmax,
@@ -156,7 +156,7 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
                     np.logical_and(tss <= times, times < tee))
             if len(whr[0]):
                 row, col = nid // w, nid % w
-                row, col = fe.decode_ids(nid, shp[1], shp[0], True)
+                # row, col = fe.decode_ids(nid, shp[1], shp[0], True)
 
                 # row += k_shape[0] // 2
                 # col += k_shape[1] // 2
@@ -178,9 +178,9 @@ for tidx, ts in enumerate(np.arange(0, run_time, dt)):
 
     fig.show()
 
-# fig.tight_layout()
-fig.savefig("{}_sim_output_{:010d}.png".format(name, int(ts)), dpi=300)
-plt.close(fig)
+    # fig.tight_layout()
+    fig.savefig("{}_sim_output_{:010d}.png".format(name, int(ts)), dpi=300)
+    plt.close(fig)
 
 
 # plt.show()

@@ -17,7 +17,7 @@ def spikes_to_bins(spikes, max_t, t_bin):
     return sbins
 
 
-def __plot_binned_spikes(binned, shape, offset_row):
+def __plot_binned_spikes(binned, shape, offset_row=0):
     images = []
     max_idx = -1
     for bidx, sbin in enumerate(binned):
@@ -25,18 +25,19 @@ def __plot_binned_spikes(binned, shape, offset_row):
         img = np.zeros(shape)
         for nidx, spks in enumerate(sbin):
             nspks = len(spks)
-            if nspks:
-                nidx += offset_row
-                if nidx > max_idx:
-                    max_idx = nidx
+            if nspks > 0:
+                # nidx += offset_row
+                # if nidx > max_idx:
+                #     max_idx = nidx
 
-                # r, c = fe.decode_ids(nidx, shape=shape, most_significant_rows=ROWS_AS_MSB)
-                r, c = nidx // shape[1], nidx % shape[1]
-
+                # r, c = fe.decode_ids(nidx, shape=shape,
+                #                      most_significant_rows=not ROWS_AS_MSB)
                 # if r >= shape[0] or c >= shape[1]:
                 #     continue
 
-                # print(nidx, r, c, nspks)
+                r, c = nidx // shape[1], nidx % shape[1]
+
+                print(shape, nidx, r, c, nspks)
                 img[r, c] = nspks
         images.append(img)
     # print("\n\n\nmax_index found for spikes {}\n\n".format(max_idx))
