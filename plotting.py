@@ -37,7 +37,7 @@ def __plot_binned_spikes(binned, shape, offset_row=0):
 
                 r, c = nidx // shape[1], nidx % shape[1]
 
-                print(shape, nidx, r, c, nspks)
+                # print(shape, nidx, r, c, nspks)
                 img[r, c] = nspks
         images.append(img)
     # print("\n\n\nmax_index found for spikes {}\n\n".format(max_idx))
