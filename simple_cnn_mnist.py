@@ -100,7 +100,7 @@ def run_network(start_char, n_digits, n_test=10000):
     # sim.NIF_curr_exp_pool_dense.set_model_max_atoms_per_core(MAX_N_DENSE)
 
     sim.setup(timestep=1.)
-    sim.set_number_of_neurons_per_core(sim.NIF_curr_delta, (32, 16))
+    # sim.set_number_of_neurons_per_core(sim.NIF_curr_delta, (32, 16))
 
     np.random.seed(13)
 
@@ -110,7 +110,8 @@ def run_network(start_char, n_digits, n_test=10000):
     in_ids = np.arange(0, n_in)
     # xy_in_ids = in_ids
     # n_in = fe.max_coord_size(shape=shape_in, most_significant_rows=ROWS_AS_MSB)
-    xy_in_ids = fe.convert_ids(in_ids, shape=shape_in, most_significant_rows=ROWS_AS_MSB)
+    xy_in_ids = fe.convert_ids(in_ids, shape=shape_in,
+                               most_significant_rows=ROWS_AS_MSB)
     small = np.where(xy_in_ids < np.prod(shape_in))
     # in_ids = in_ids[small]
     xy_in_ids = xy_in_ids[small]
@@ -428,6 +429,10 @@ def run_network(start_char, n_digits, n_test=10000):
     # for i, _spikes in enumerate(all_spikes):
     prefix = "{:03}".format(start_char)
 #     prefix = "{:03}".format(0)
+    in_spikes = spikes['input'][0]
+    new_in_spikes = [in_spikes[xy] for xy in xy_in_ids]
+    spikes['input'][0] = new_in_spikes
+
     data = splt.plot_images(order, shapes, test_y, kernels, spikes,
                             n_digits*sim_time, digit_duration, offsets, norm_w,
                             n_digits, prefix)
