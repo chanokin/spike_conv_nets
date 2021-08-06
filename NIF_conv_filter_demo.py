@@ -93,7 +93,7 @@ for k in kernels:
 # sys.exit()
 
 # sim.IF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=1024)
-sim.NIF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=2048)
+# sim.NIF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=2048)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=1024)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=100)
 
@@ -111,17 +111,19 @@ if bool(0):
                          {'spike_times': spike_times}, label='input spikes')
 else:
     src = sim.Population(n_input, sim.SpikeSourcePoisson,
-                         {'rate': rates}, label='input spikes')
+                         {'rate': rates},
+                         structure=sim.Grid2D(shape[1]/shape[0]),
+                         label='input spikes')
 
-conns = {k: sim.ConvolutionOrigConnector(shape, kernels[k], strides=stride)
+conns = {k: sim.ConvolutionConnector(kernels[k], strides=stride)
          for k in kernels}
 
-as_post = {k: {r: {c: conns[k].pre_as_post(r, c)
-                      for c in range(shape[1])}
-               for r in range(shape[0])}
-           for k in conns}
+# as_post = {k: {r: {c: conns[k].pre_as_post(r, c)
+#                       for c in range(shape[1])}
+#                for r in range(shape[0])}
+#            for k in conns}
 
-out_shapes = {k: conns[k].get_post_shape() for k in conns}
+out_shapes = {k: conns[k].get_post_shape(shape) for k in conns}
 out_sizes = {k: int(np.prod(out_shapes[k])) for k in out_shapes}
 
 params = {
@@ -129,9 +131,12 @@ params = {
     'v_reset': 0.,
     'v': 0.,
 }
+
 outputs = {
-    k: sim.Population(out_sizes[k], sim.NIF_curr_exp_conv,
-                      params, label="out_{}".format(k))
+    k: sim.Population(out_sizes[k], sim.NIF_curr_delta,
+                      params,
+                      structure=sim.Grid2D(out_shapes[k][1]/out_shapes[k][0]),
+                      label="out_{}".format(k))
     for k in out_shapes
 }
 
@@ -142,7 +147,7 @@ for k in outputs:
 
 
 projs = {
-    k: sim.Projection(src, outputs[k], conns[k])
+    k: sim.Projection(src, outputs[k], conns[k], sim.Convolution(), )
     for k in outputs
 }
 
@@ -161,7 +166,7 @@ np.savez_compressed("output_for_conv_filter_demo.npz",
     flat=flat, n_input=n_input, rates=rates,
     stride=stride, k_shape=k_shape, kernels=kernels,
     run_time=run_time, out_shapes=out_shapes,
-    as_post=as_post
+    # as_post=as_post
 )
 
 # import plot_conv_filter_demo

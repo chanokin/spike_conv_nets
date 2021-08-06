@@ -95,12 +95,13 @@ def run_network(start_char, n_digits, n_test=10000):
     # MAX_N_CONV = 512
     # # sim.extra_models.SpikeSourcePoissonVariable.set_model_max_atoms_per_core(512)
     # sim.IF_curr_exp_conv.set_model_max_atoms_per_core(MAX_N_CONV)
-    sim.NIF_curr_delta.set_model_max_atoms_per_core(64)
+    # sim.NIF_curr_delta.set_model_max_atoms_per_core(64)
     # # sim.IF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=256)
     # sim.IF_curr_exp_pool_dense.set_model_max_atoms_per_core(MAX_N_DENSE)
     # sim.NIF_curr_exp_pool_dense.set_model_max_atoms_per_core(MAX_N_DENSE)
 
     sim.setup(timestep=1.)
+    sim.set_number_of_neurons_per_core(sim.NIF_curr_delta, (32, 16))
 
     np.random.seed(13)
 
@@ -108,15 +109,19 @@ def run_network(start_char, n_digits, n_test=10000):
     shape_in = np.asarray([28, 28])
     n_in = int(np.prod(shape_in))
     in_ids = np.arange(0, n_in)
-    xy_in_ids = in_ids
+    # xy_in_ids = in_ids
     # n_in = fe.max_coord_size(shape=shape_in, most_significant_rows=ROWS_AS_MSB)
-    # xy_in_ids = fe.convert_ids(in_ids, shape=shape_in, most_significant_rows=ROWS_AS_MSB)
+    xy_in_ids = fe.convert_ids(in_ids, shape=shape_in, most_significant_rows=ROWS_AS_MSB)
+    small = np.where(xy_in_ids < np.prod(shape_in))
+    # in_ids = in_ids[small]
+    xy_in_ids = xy_in_ids[small]
 
     digit_duration = 500.0  # ms
     digit_rate = 100.0  # hz
     in_rates = np.zeros((n_in, n_digits))
     for i in range(n_digits):
-        in_rates[xy_in_ids, i] = test_X[i].flatten()
+
+        in_rates[xy_in_ids, i] = (test_X[i].flatten())[small]
 
     in_rates *= (digit_rate / in_rates.max())
     in_durations = np.ones((n_in, n_digits)) * np.round(digit_duration * 0.9)
@@ -153,8 +158,8 @@ def run_network(start_char, n_digits, n_test=10000):
     use_lif = bool(0)
     cell_type = sim.IF_curr_exp if use_lif else sim.NIF_curr_delta
     # dense_cell_type = sim.IF_curr_exp_dense if use_lif else sim.NIF_curr_delta
-    cell_type_dense = sim.NIF_curr_delta_dense
-    sim.set_number_of_neurons_per_core(cell_type_dense, 32)
+    cell_type_dense = sim.NIF_curr_delta
+    # sim.set_number_of_neurons_per_core(cell_type_dense, (32))
 
     for i, o in enumerate(order):
         if i == 0:
@@ -180,7 +185,7 @@ def run_network(start_char, n_digits, n_test=10000):
         elif 'dense' in o.lower():
             shape = par['shape'][0:2]
             if len(shape) == 1:
-                shape = (shape[0], 1)
+                shape = (1, shape[0])
             ps = def_params.copy()
             v = ps.pop('v')
             ps['v_thresh'] = thresholds[o] if local_thresh else par['threshold']
@@ -406,18 +411,18 @@ def run_network(start_char, n_digits, n_test=10000):
             grts = h5[rts]
             gnt = h5[nt]
 
-        for ch_idx in range(n_digits):
-            aidx = ch_idx + start_char
-            rs = [len(ts) for ts in all_spikes[ch_idx]['dense_2'][0]]
-            gnt[:] = aidx + 1
-            gsamp[aidx, 0] = aidx
-            gtgt[aidx, 0] = test_y[ch_idx]
-            grts[aidx, :] = rs
-
-            ty = test_y[ch_idx]
-            py = np.argmax(rs)
-
-            print("Sample {}\tPredicted = {}\tExpected = {}".format(aidx, py, ty))
+        # for ch_idx in range(n_digits):
+        #     aidx = ch_idx + start_char
+        #     rs = [len(ts) for ts in all_spikes[ch_idx]['dense_2'][0]]
+        #     gnt[:] = aidx + 1
+        #     gsamp[aidx, 0] = aidx
+        #     gtgt[aidx, 0] = test_y[ch_idx]
+        #     grts[aidx, :] = rs
+        #
+        #     ty = test_y[ch_idx]
+        #     py = np.argmax(rs)
+        #
+        #     print("Sample {}\tPredicted = {}\tExpected = {}".format(aidx, py, ty))
 
     import plot_simple_cnn_mnist as splt
 

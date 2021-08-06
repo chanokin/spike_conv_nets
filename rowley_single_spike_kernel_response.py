@@ -23,7 +23,7 @@ def pynn_aspect_ratio(shape):
     return float(shape[1]) / float(shape[0])
 
 
-in_shape = (11, 15)
+in_shape = (31, 31)
 n_input = int(np.prod(in_shape))
 # n_input = fe.max_coord_size(in_shape[1], in_shape[0], ROWS_AS_MSB)
 
@@ -38,7 +38,7 @@ run_time = 4.
 
 sim.setup(timestep=1.)
 
-sim.set_number_of_neurons_per_core(sim.NIF_curr_delta, (4, 4))
+# sim.set_number_of_neurons_per_core(sim.NIF_curr_delta, (4, 4))
 
 # spike_idx = fe.encode_coords((in_shape[0] // 2), (in_shape[1] // 2),
 #                              in_shape[1], in_shape[0], ROWS_AS_MSB)
