@@ -73,9 +73,8 @@ def run_network(start_char, n_digits, n_test=10000):
     
     train_samples = 5000
     X_train, X_test, y_train, y_test = train_test_split(
-                                X, y, train_size=train_samples, test_size=10000)
-    
-    
+                                            X, y, train_size=train_samples,
+                                            test_size=10000, shuffle=False)
 
     test_X = X_test[start_char: start_char + n_digits]
     test_y = y_test[start_char: start_char + n_digits]
