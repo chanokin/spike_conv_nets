@@ -9,7 +9,6 @@ from collections import OrderedDict
 from pprint import pprint
 import numpy as np
 
-
 class Parser:
     CONV2D_KEYS = ('in_channels', 'kernel_size', 'out_channels',
                    'padding', 'stride', 'weight')
@@ -17,7 +16,7 @@ class Parser:
     LICELL_KEYS = ('alpha', 'tau_mem_inv', 'tau_syn_inv',
                    'v_leak', 'v_reset', 'v_th')
     CELL_TYPES = {
-        'Conv2dLICell': 'IF_curr_delta_conv'
+        'Conv2dLICell': 'IF_curr_delta'
     }
 
     CELL_TRANSLATIONS = {
@@ -33,24 +32,23 @@ class Parser:
                  # pooling=None, pool_stride=None,
     CONNECT_TRANSLATIONS = {
         'AvgPool2d': {
-            'kernel_size': ('pooling'),
+            'kernel_size': ('pool_shape'),
             'stride': ('pool_stride')
         },
         'Conv2d': {
             'in_shape': ('shape_pre'),
             # this currently has the order out_channels, in_channels, rows, cols
             # we need to test if it needs flipping as in tensorflow
-            'weight': ('weights_kernel', lambda x: x.detach().numpy()),
+            'weight': ('kernel_weights', lambda x: x.detach().numpy()),
             'stride': ('strides'),
             'padding': ('padding'),
         }
     }
 
-    def __init__(self, model, dummy_data, pynn, timestep=1, min_delay=1, max_delay=144):
+    def __init__(self, model, dummy_data, timestep=1, min_delay=1, max_delay=144):
         self.timestep = timestep
         self.min_delay = min_delay
         self.max_delay = max_delay
-        self.pynn = pynn
         self.input_data = dummy_data
         self.x = None
         self.s = None
@@ -102,7 +100,6 @@ class Parser:
         return d
 
     def generate_pynn_populations_dicts(self):
-        sim = self.pynn
         pops = {}
         count = 0
         prev_i = 0
@@ -116,25 +113,28 @@ class Parser:
             comp_name = "{}{}".format(n0, n)
             if comp_name not in self.CELL_TYPES:
                 continue
-            ct = getattr(sim, self.CELL_TYPES[comp_name])
+
             osh = d['out_shape']
             if len(osh) > 2:
                 n_channels = osh[1]
                 size = int(np.prod(osh[-2:]))
+                shape = osh[-2:]
             else:
                 n_channels = 1
                 size = int(np.prod(osh))
+                shape = [size, 1]
 
             params = self.parse_cell_parameters(comp_name, d)
             label = "{}_{}__size_{}".format(n, count, size)
             # size, cellclass, cellparams =
-
+            cell_class = self.CELL_TYPES[comp_name]
             pops[i] = {
                 'size': size,
-                'cellclass': ct,
+                'cellclass': cell_class,
                 'cellparams': params,
                 'label': label,
-                'n_channels': n_channels
+                'n_channels': n_channels,
+                'shape': shape
             }
             count += 1
 
@@ -143,7 +143,6 @@ class Parser:
     def generate_pynn_projections_dicts(self, pops):
         post = None
         pre = 0
-        sim = self.pynn
         prjs = {}
         count = 0
         last_i = 0
@@ -192,15 +191,27 @@ class Parser:
         prjs = self.generate_pynn_projections_dicts(pops)
         return pops, prjs
 
-    def pynn_dict_to_object(self, obj_type, dictionary):
+    def __pynn_grid2d_ratio(self, shape):
+        # width / height
+        return shape[1] / shape[0]
+
+    def pynn_dict_to_object(self, sim, obj_type, dictionary):
         if obj_type == 'population':
-            return self.pynn.Population(**dictionary)
+
+            d = deepcopy(dictionary)
+            ct = d['cellclass']
+            cell = getattr(sim, ct)
+            d['cellclass'] = cell
+            shape = d.pop('shape')
+            d['structure'] = sim.Grid2D(self.__pynn_grid2d_ratio(shape))
+            return sim.Population(**d)
         else:
             conn_d = dictionary['connector']
             proj_d = dictionary['projection']
-            conn = self.pynn.Connector(**conn_d)
+            # conn = sim.Connector(**conn_d)
+            conn = dictionary['c']
             proj_d['connector'] = conn
-            return self.pynn.Projection(**proj_d)
+            return sim.Projection(**proj_d)
 
     def parse_translations(self, in_dict, translations):
         trans = {}
@@ -223,17 +234,16 @@ class Parser:
     def parse_input_dicts(self, input_dicts):
         return input_dicts
 
-    def generate_pynn_objects(self, input_dicts, pops_dicts, projs_dicts):
-        sim = self.pynn
+    def generate_pynn_objects(self, sim, input_dicts, pops_dicts, projs_dicts):
         sim.setup(timestep=self.timestep, min_delay=self.min_delay,
                   max_delay=self.max_delay)
         inputs = self.parse_input_dicts(input_dicts)
-        pops = self.generate_pynn_populations(pops_dicts)
-        prjs = self.generate_pynn_projections(inputs, pops, projs_dicts)
+        pops = self.generate_pynn_populations(sim, pops_dicts)
+        prjs = self.generate_pynn_projections(sim, inputs, pops, projs_dicts)
 
         return pops, prjs
 
-    def generate_pynn_populations(self, pops_dicts):
+    def generate_pynn_populations(self, sim, pops_dicts):
         pops = {}
         for i, di in pops_dicts.items():
             d = deepcopy(di)
@@ -242,29 +252,29 @@ class Parser:
             ps = []
             for j in range(n_channels):
                 d['label'] = '{}_ch{}'.format(lbl, j)
-                ps.append(self.pynn_dict_to_object('population', d))
+                ps.append(self.pynn_dict_to_object(sim, 'population', d))
 
             pops[i] = ps
 
         return OrderedDict(pops)
 
-    def generate_pynn_projections(self, inputs, pynn_pops, projs_dicts):
-        sim = self.pynn
+    def generate_pynn_projections(self, sim, inputs, pynn_pops, projs_dicts):
         prjs = {}
         for i, pr in projs_dicts.items():
             p = deepcopy(pr)
             conn_type = p.pop('name').lower()
-            w_key = 'weights_kernel' if 'conv2d' in conn_type else 'weights'
+            w_key = 'kernel_weights' if 'conv2d' in conn_type else 'weights'
             pre = p.pop('pre')
             post = p.pop('post')
             ws = p.pop(w_key)
-            p['shape_pre'] = p['shape_pre'][2:]
+            shape_pre = p.pop('shape_pre')
             n_pre = ws.shape[1]
             n_post = ws.shape[0]
             pre_pops = inputs if pre == 0 else pynn_pops[pre]
 
             if pre == 0:
-                print('TODO: pre {} indicates the input, not implemented yet'.format(pre))
+                print("TODO: pre {} indicates the input, parsing projection "
+                      "not yet implemented".format(pre))
                 # continue
 
             post_pops = pynn_pops[post]
@@ -275,14 +285,16 @@ class Parser:
                     conn_d = deepcopy(p)
                     conn_d[w_key] = ws[post_i, pre_i].copy()
                     if 'conv2d' in conn_type:
-                        conn = sim.ConvolutionOrigConnector(**conn_d)
+                        conn = sim.ConvolutionConnector(**conn_d)
+                        synapse = sim.Convolution()
                     else:
                         print('TODO: dense connector parsing not fully implemented')
-                        conn = sim.DensePoolConnector(**conn_d)
+                        conn = sim.PoolDenseConnector(**conn_d)
+                        synapse = sim.PoolDense()
                     label = '{}_from_{}[{}]_to_{}[{}]'.format(
                                             conn_type, pre, pre_i, post, post_i)
                     post_d[post_i] = sim.Projection(
-                        pre_pop, post_pop, conn, label=label)
+                        pre_pop, post_pop, conn, synapse, label=label)
                 pre_d[pre_i] = post_d
 
             prjs[i] = pre_d
