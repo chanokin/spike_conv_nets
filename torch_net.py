@@ -1,17 +1,16 @@
 import torch
 import norse.torch
 # from models import snn
-from torch_to_pynn import Parser
+from torch_to_spynn import Parser
 import torch.nn as nn
 from norse.torch.module.sequential import SequentialState
 from norse.torch.functional.lif import LIFParameters
 from norse.torch.module.lif import LIFCell
 from norse.torch.module.leaky_integrator import LICell
-import spynnaker8 as sim
 import pytorch_lightning as pl
-from pynn_object_serialisation.functions import (
-    intercept_simulator, restore_simulator_from_file
-)
+# from pynn_object_serialisation.functions import (
+#     intercept_simulator, restore_simulator_from_file
+# )
 
 class DVSModelSimple2(pl.LightningModule):
     def __init__(
@@ -153,14 +152,16 @@ m = DVSModelSimple2(n_class, n_in_channels, height, width)
 n_samples = 1
 n_frames_per_sample = 1
 dummy = torch.randn(n_samples, n_frames_per_sample, n_in_channels, height, width)
-parser = Parser(m, dummy, sim)
+parser = Parser(m, dummy)
 pynn_pops_d, pynn_projs_d = parser.generate_pynn_dictionaries()
 
 # do pynn setup
-input_dict = {}
-pynn_pops, pynn_projs = parser.generate_pynn_objects(input_dict, pynn_pops_d, pynn_projs_d)
+import spynnaker8 as sim
+# input_dict = {}
+# pynn_pops, pynn_projs = parser.generate_pynn_objects(
+#                             sim, input_dict, pynn_pops_d, pynn_projs_d)
 
-intercept_simulator(sim, "test_torch_network")
+# intercept_simulator(sim, "test_torch_network")
 
 # sim.run(0)
 
