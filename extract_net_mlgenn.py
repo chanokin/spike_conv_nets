@@ -1,9 +1,9 @@
-import tensorflow as tf
-from tensorflow.keras import models, layers, datasets
+#import tensorflow as tf
+from tensorflow.keras import models#, layers, datasets
 from ml_genn import Model
-from ml_genn.layers import InputType
-from ml_genn.norm import DataNorm, SpikeNorm
-from ml_genn.utils import parse_arguments, raster_plot
+# from ml_genn.layers import InputType
+# from ml_genn.norm import DataNorm, SpikeNorm
+# from ml_genn.utils import parse_arguments, raster_plot
 import numpy as np
 
 
@@ -36,7 +36,8 @@ param_trans = {
 
 
 def get_neuron_params(lyr, translations=param_trans):
-    k = 'neurons' if lyr.name != 'input' else 'input'
+    print(lyr.__class__.__name__)
+    k = 'neurons' if lyr.__class__.__name__ != 'InputLayer' else 'input'
     ft = translations[k]
     d = {}
     for k in ft:
@@ -50,10 +51,10 @@ def get_neuron_params(lyr, translations=param_trans):
 
 
 def get_connectivity(lyr, translations=param_trans):
-    if lyr.name == 'input':
+    if lyr.__class__.__name__ == 'InputLayer':
         return {}
 
-    tp = str(type(lyr)).lower()
+    tp = str(type(lyr.downstream_synapses[0])).lower()
     if 'conv2d' in tp:
         k = 'conv2d'
     else:  # 'dense' in tp:
@@ -97,8 +98,8 @@ order = []
 for layer in mlg_model.layers:
     name = layer.name
     params[name] = get_neuron_params(layer)
-    conns[name] = get_connectivity(layer)
-    order.append(name)
+    # conns[name] = get_connectivity(layer)
+    # order.append(name)
 
 for n in order:
     print(n)
