@@ -6,7 +6,7 @@ from ml_genn import Model
 # from ml_genn.utils import parse_arguments, raster_plot
 import numpy as np
 
-from bifrost.translate.mlgenn.extractor import extract
+from bifrost.translate.mlgenn.extractor import extract_all
 
 param_trans = {
     'neurons': {
@@ -91,7 +91,7 @@ mlg_model = Model.convert_tf_model(tf_model, input_type='poisson',
                 connectivity_type='procedural')
 mlg_model.compile(dt=1.0, batch_size=1, rng_seed=0)
 
-extract(mlg_model)
+net_params = extract_all(mlg_model)
 
 print(mlg_model)
 params = {}
