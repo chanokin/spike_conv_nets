@@ -73,21 +73,6 @@ class DVSModelSimple2(pl.LightningModule):
 
         self.final = LICell(dt=dt)
 
-    @property
-    def layers(self):
-        bs = [
-            self.block1, self.block2, self.block3, self.dense, #self.score_dense
-        ]
-        lyrs = []
-        for b in bs:
-            if isinstance(b, SequentialState):
-                bls = [b._modules[l] for l in sorted(b._modules)]
-            else:
-                bls = [b]
-            lyrs.extend(bls)
-
-        return lyrs
-
     def forward(self, x):
         state_block1 = state_block2 = state_block3 = state_dense = state_final = None
 

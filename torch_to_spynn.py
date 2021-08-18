@@ -3,30 +3,47 @@ from copy import deepcopy
 import torch
 import norse.torch
 from torch import nn
+from torchinfo import summary
+from norse.torch.module.sequential import SequentialState
 from norse.torch.module.lif import LIFCell
 from norse.torch.module.leaky_integrator import LICell
+from norse.torch.functional.leaky_integrator import LIParameters
+from norse.torch.functional.lif import LIFParameters
 from collections import OrderedDict
 from pprint import pprint
 import numpy as np
-
+def detach(x):
+    return np.asscalar(x.detach().numpy())
 class Parser:
     CONV2D_KEYS = ('in_channels', 'kernel_size', 'out_channels',
                    'padding', 'stride', 'weight')
     AVGPOOL2D_KEYS = ('kernel_size', 'stride')
-    LICELL_KEYS = ('alpha', 'tau_mem_inv', 'tau_syn_inv',
-                   'v_leak', 'v_reset', 'v_th')
+    LICELL_KEYS = ('tau_mem_inv', 'tau_syn_inv',
+                   'v_leak')
+    LIFCELL_KEYS = ('tau_mem_inv', 'tau_syn_inv',
+                    'v_leak', 'v_reset', 'v_th')
     CELL_TYPES = {
-        'Conv2dLICell': 'IF_curr_delta'
+        'Conv2dLICell': 'IF_curr_exp',
+        'Conv2dLIFCell': 'IF_curr_exp'
     }
 
     CELL_TRANSLATIONS = {
         'Conv2dLICell': {
-            'tau_mem_inv': ('tau_m', lambda x: np.asscalar(1./x.detach().numpy())),
-            # 'tau_syn_inv': ('tau_syn', lambda x: 1./x),
-            'v_leak': ('v_rest', lambda x: np.asscalar(x.detach().numpy())),
-            'v_reset': ('v_reset', lambda x: np.asscalar(x.detach().numpy())),
-            'v_th': ('v_thresh', lambda x: np.asscalar(x.detach().numpy()))
+            'tau_mem_inv': ('tau_m', lambda x: detach(1./x)),
+            'tau_syn_inv': ('tau_syn', lambda x: detach(1./x)),
+            'v_leak': ('v_rest', lambda x: detach(x)),
+            'v_reset': ('v_reset', lambda x: detach(x)),
+            'v_th': ('v_thresh', lambda x: detach(x))
+        },
+        'Conv2dLIFCell': {
+            'tau_mem_inv': ('tau_m', lambda x: detach(1./x)),
+            'tau_syn_inv': ('tau_syn', lambda x: detach(1./x)),
+            'v_leak': ('v_rest', lambda x: detach(x)),
+            'v_reset': ('v_reset', lambda x: detach(x)),
+            'v_th': ('v_thresh', lambda x: detach(x))
         }
+        # todo: currently only conv layers, deconv (ConvTranspose) may need
+        #  other setup as they are followed by a conv one!
     }
     #shape_pre, weights_kernel, strides, padding,
                  # pooling=None, pool_stride=None,
@@ -59,43 +76,40 @@ class Parser:
         self.extract_layers()
 
     def extract_layers(self):
-        if not hasattr(self.model, "layers"):
-            raise Exception("Please define layers as an ordered list of "
-                            "blocks/layers of your PyTorch model")
+        m = self.model
+        s = summary(m, self.input_data.shape)
 
-        self.x = self.input_data[:, 0]
-        self.layer_dicts = OrderedDict(
-                            {i: self.get_pop_type_and_params(l, self.x, self.s)
-                                for i, l in enumerate(self.model.layers)
-                                if not isinstance(l, nn.BatchNorm2d)})
+        ld = OrderedDict({i: self.get_pop_type_and_params(l)
+                             for i, l in enumerate(s.summary_list)
+                             if not (isinstance(l.module, nn.BatchNorm2d) or
+                                     isinstance(l.module, SequentialState) or
+                                     i == 0)})
 
+        self.layer_dicts = ld
         # pprint(self.layer_dicts)
 
-    def get_pop_type_and_params(self, layer, x, s):
+    def get_pop_type_and_params(self, layer):
         d = {
-            'name': layer.__class__.__name__,
-            'in_shape': x.shape
+            'name': layer.class_name,
+            'in_shape': layer.input_size,
+            'out_shape': layer.output_size,
         }
 
-        try:
-            x = layer(x, s)
-        except:
-            x = layer(x)
+        module = layer.module
 
-        if len(x) == 1:
-            self.x = x
-        else:
-            self.x = x[0]
-            self.s = x[1]
+        if isinstance(module, nn.Conv2d):
+            d.update({k: getattr(module, k) for k in self.CONV2D_KEYS})
+        elif isinstance(module, nn.ConvTranspose2d):
+            d.update({k: getattr(module, k) for k in self.CONV2D_KEYS})
+        elif isinstance(module, nn.AvgPool2d):
+            d.update({k: getattr(module, k) for k in self.AVGPOOL2D_KEYS})
+        # for 'neuron' module types we base our selection on parameter types
+        # apparently that's a thing!
+        elif isinstance(module.p, LIParameters):
+            d.update({k: getattr(module.p, k) for k in self.LICELL_KEYS})
+        elif isinstance(module.p, LIFParameters):
+            d.update({k: getattr(module.p, k) for k in self.LIFCELL_KEYS})
 
-        if isinstance(layer, nn.Conv2d):
-            d.update({k: getattr(layer, k) for k in self.CONV2D_KEYS})
-        elif isinstance(layer, nn.AvgPool2d):
-            d.update({k: getattr(layer, k) for k in self.AVGPOOL2D_KEYS})
-        elif isinstance(layer, LICell):
-            d.update({k: getattr(layer.p, k) for k in self.LICELL_KEYS})
-
-        d['out_shape'] = self.x.shape
         self.layers_count += 1
         return d
 
@@ -103,11 +117,13 @@ class Parser:
         pops = {}
         count = 0
         prev_i = 0
-        for i, d in self.layer_dicts.items():
+        keys = list(self.layer_dicts.keys())
+        for i, [k, d] in enumerate(self.layer_dicts.items()):
             if i == 0:
                 continue
 
-            n0 = self.layer_dicts[prev_i]['name']
+            k0 = keys[prev_i]
+            n0 = self.layer_dicts[k0]['name']
             n = d['name']
             prev_i = i
             comp_name = "{}{}".format(n0, n)
@@ -147,13 +163,15 @@ class Parser:
         count = 0
         last_i = 0
         conn_layers_dicts = []
-        for i, d in self.layer_dicts.items():
+        keys = list(self.layer_dicts.keys())
+        for i, [k, d] in enumerate(self.layer_dicts.items()):
             if i == 0:
                 conn_layers_dicts.append(d)
                 continue
 
             n = d['name']
-            n0 = self.layer_dicts[last_i]['name']
+            k0 = keys[last_i]
+            n0 = self.layer_dicts[k0]['name']
             comp_cell = "{}{}".format(n0, n)
             last_i = i
 
