@@ -6,7 +6,7 @@ from ml_genn import Model
 # from ml_genn.utils import parse_arguments, raster_plot
 import numpy as np
 
-from bifrost.translate.mlgenn.extractor import extract_all
+from bifrost.extract.mlgenn.extractor import extract_all
 
 param_trans = {
     'neurons': {
