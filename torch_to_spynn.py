@@ -14,6 +14,7 @@ from pprint import pprint
 import numpy as np
 def detach(x):
     return np.asscalar(x.detach().numpy())
+
 class Parser:
     CONV2D_KEYS = ('in_channels', 'kernel_size', 'out_channels',
                    'padding', 'stride', 'weight')
