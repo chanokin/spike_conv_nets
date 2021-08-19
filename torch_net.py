@@ -140,6 +140,9 @@ dummy = torch.randn(n_samples, n_frames_per_sample, n_in_channels, height, width
 parser = Parser(m, dummy)
 pynn_pops_d, pynn_projs_d = parser.generate_pynn_dictionaries()
 
+from pprint import pprint
+pprint(pynn_pops_d)
+pprint(pynn_projs_d)
 # do pynn setup
 import spynnaker8 as sim
 # input_dict = {}
