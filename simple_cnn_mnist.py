@@ -12,7 +12,7 @@ from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 from sklearn.utils import check_random_state
 from pyNN.space import Line, Grid2D
-
+from bifrost.translate.mlgenn import extract_all
 H, W = 0, 1
 ROWS, COLS = H, W
 
@@ -50,6 +50,9 @@ def run_network(start_char, n_digits, n_test=10000):
     filename = "simple_cnn_network_elements.npz"
 
     data = np.load(filename, allow_pickle=True)
+
+    layer_dicts = extract_all(data)
+
     thresholds = dict(
         conv2d=1,#3.1836495399475098,
         conv2d_1=1,#2.9346282482147217,

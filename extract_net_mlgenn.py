@@ -92,6 +92,11 @@ mlg_model = Model.convert_tf_model(tf_model, input_type='poisson',
 mlg_model.compile(dt=1.0, batch_size=1, rng_seed=0)
 
 net_params = extract_all(mlg_model)
+np.savez_compressed('simple_cnn_params.npz', **net_params)
+
+del net_params
+
+cnn_params = np.load('simple_cnn_params.npz')
 
 print(mlg_model)
 params = {}
