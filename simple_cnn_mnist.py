@@ -12,7 +12,6 @@ from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 from sklearn.utils import check_random_state
 from pyNN.space import Line, Grid2D
-from bifrost.translate.mlgenn import extract_all
 
 H, W = 0, 1
 ROWS, COLS = H, W
