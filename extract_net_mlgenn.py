@@ -86,7 +86,7 @@ def get_connectivity(lyr, translations=param_trans):
 
 
 
-tf_model = models.load_model('simple_cnn_tf_model')
+tf_model = models.load_model('simple_cnn_tf_model.tf')
 mlg_model = Model.convert_tf_model(tf_model, input_type='poisson', 
                 connectivity_type='procedural')
 mlg_model.compile(dt=1.0, batch_size=1, rng_seed=0)
@@ -94,9 +94,23 @@ mlg_model.compile(dt=1.0, batch_size=1, rng_seed=0)
 net_params = extract_all(mlg_model)
 np.savez_compressed('simple_cnn_params.npz', **net_params)
 
-del net_params
+# del net_params
 
-cnn_params = np.load('simple_cnn_params.npz')
+cnn_params = np.load('simple_cnn_params.npz', allow_pickle=True)
+
+for i, k in enumerate(cnn_params.keys()):
+    lyr = cnn_params[k].item()
+    print(lyr.keys())
+    print(lyr['params'].keys())
+
+from bifrost.extract.mlgenn.to_ir import to_neuron_layer
+from bifrost.export.ml_genn import MLGeNNContext
+
+ctx = MLGeNNContext({})
+lyr = to_neuron_layer(1, net_params)
+
+from bifrost.export.population import export_neuron_layer
+print(export_neuron_layer(lyr, ctx))
 
 print(mlg_model)
 params = {}
