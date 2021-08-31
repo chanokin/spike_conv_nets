@@ -97,7 +97,7 @@ np.savez_compressed('simple_cnn_params.npz', **net_params)
 # del net_params
 from bifrost.extract.mlgenn.to_ir import (to_neuron_layer, to_connection)
 from bifrost.export.ml_genn import MLGeNNContext
-from bifrost.export.population import export_neuron_layer
+from bifrost.export.population import export_layer_neuron
 
 ctx = MLGeNNContext({})
 cnn_params = np.load('simple_cnn_params.npz', allow_pickle=True)
@@ -110,7 +110,7 @@ for i, k in enumerate(cnn_params.keys()):
     if i > 0:
         lyr = to_neuron_layer(i, net_params)
         layers.append(lyr)
-        print(export_neuron_layer(lyr, ctx, pop_join_str=",\n    ").value)
+        print(export_layer_neuron(lyr, ctx, pop_join_str=",\n    ").value)
 
 
 for prei, pre in enumerate(layers):
