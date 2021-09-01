@@ -7,6 +7,10 @@ from ml_genn import Model
 import numpy as np
 
 from bifrost.extract.mlgenn.extractor import extract_all
+from bifrost.extract.mlgenn.to_ir import (to_neuron_layer, to_connection)
+from bifrost.export.ml_genn import MLGeNNContext
+from bifrost.export.population import export_layer_neuron
+from bifrost.export.connection import export_connection
 
 def to_dict(np_file):
     d = {}
@@ -103,11 +107,7 @@ mlg_model.compile(dt=1.0, batch_size=1, rng_seed=0)
 net_params = extract_all(mlg_model)
 np.savez_compressed('simple_cnn_params.npz', **net_params)
 
-# del net_params
-from bifrost.extract.mlgenn.to_ir import (to_neuron_layer, to_connection)
-from bifrost.export.ml_genn import MLGeNNContext
-from bifrost.export.population import export_layer_neuron
-
+del net_params
 
 cnn_params = np.load('simple_cnn_params.npz', allow_pickle=True)
 dcnn_params = to_dict(cnn_params)
@@ -125,17 +125,33 @@ for i, k in enumerate(dcnn_params.keys()):
         lyr_map[str(lyr)] = k
 
 ctx = MLGeNNContext(lyr_map)
-for l in layers:
-    print(export_layer_neuron(l, ctx, pop_join_str=",\n    ").value)
+layer_statements = [export_layer_neuron(l, ctx, pop_join_str=",\n    ") for l in layers]
+imp_set = set()
+for s in layer_statements:
+    imp_set |= set(s.imports)
 
-conns = {}
-for prei, pre in enumerate(layers):
-    cc = {}
-    for posti, post in enumerate(layers[1:]):
-        conn = to_connection(pre, post, dcnn_params)
-        cc[str(post)] = conn
-    conns[str(pre)] = cc
+prm_set = set()
+for s in layer_statements:
+    prm_set |= set(s.preambles)
 
+for s in imp_set:
+    print(s)
+
+for s in prm_set:
+    print(s)
+
+for s in layer_statements:
+    print(s.value)
+
+conns = []
+for prei, pre in enumerate(layers[:-1]):
+    post = layers[prei+1]
+    conns.append(to_connection(pre, post, dcnn_params))
+
+conn_statements = [export_connection(c, ctx) for c in conns]
+
+for cs in conn_statements:
+    print(cs.value)
 
 print(mlg_model)
 params = {}
