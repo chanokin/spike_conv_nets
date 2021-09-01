@@ -8,6 +8,15 @@ import numpy as np
 
 from bifrost.extract.mlgenn.extractor import extract_all
 
+def to_dict(np_file):
+    d = {}
+    for k in np_file.keys():
+        try:
+            d[k] = np_file[k].item()
+        except:
+            d[k] = np_file[k]
+    return d
+
 param_trans = {
     'neurons': {
         'threshold': ('extra_global_params', 'Vthr'),
@@ -97,29 +106,39 @@ np.savez_compressed('simple_cnn_params.npz', **net_params)
 # del net_params
 from bifrost.extract.mlgenn.to_ir import (to_neuron_layer, to_connection)
 from bifrost.export.ml_genn import MLGeNNContext
-from bifrost.export.population import export_neuron_layer
+from bifrost.export.population import export_layer_neuron
 
-ctx = MLGeNNContext({})
+
 cnn_params = np.load('simple_cnn_params.npz', allow_pickle=True)
+dcnn_params = to_dict(cnn_params)
 
+
+lyr_map = {}
 layers = []
-for i, k in enumerate(cnn_params.keys()):
-    lyr = cnn_params[k].item()
+for i, k in enumerate(dcnn_params.keys()):
+    lyr = dcnn_params[k]
     # print(lyr.keys())
     # print(lyr['params'].keys())
     if i > 0:
-        lyr = to_neuron_layer(i, net_params)
+        lyr = to_neuron_layer(i, dcnn_params)
         layers.append(lyr)
-        print(export_neuron_layer(lyr, ctx, pop_join_str=",\n    ").value)
+        lyr_map[str(lyr)] = k
 
+ctx = MLGeNNContext(lyr_map)
+for l in layers:
+    print(export_layer_neuron(l, ctx, pop_join_str=",\n    ").value)
 
+conns = {}
 for prei, pre in enumerate(layers):
+    cc = {}
     for posti, post in enumerate(layers[1:]):
-        conn = to_connection(pre, post, net_params)
+        conn = to_connection(pre, post, dcnn_params)
+        cc[str(post)] = conn
+    conns[str(pre)] = cc
+
 
 print(mlg_model)
 params = {}
-conns = {}
 order = []
 for layer in mlg_model.layers:
     name = layer.name
