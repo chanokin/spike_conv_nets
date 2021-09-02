@@ -1,4 +1,5 @@
 #import tensorflow as tf
+from bifrost.ir import InputLayer, OutputLayer, InputSource, EthernetOutput
 from tensorflow.keras import models#, layers, datasets
 from ml_genn import Model
 # from ml_genn.layers import InputType
@@ -6,8 +7,8 @@ from ml_genn import Model
 # from ml_genn.utils import parse_arguments, raster_plot
 import numpy as np
 
-from bifrost.extract.mlgenn.extractor import extract_all
-from bifrost.parse.to_ir import (to_neuron_layer, to_connection)
+from bifrost.extract.ml_genn.extractor import extract_all
+from bifrost.parse.parse_ml_genn import (to_neuron_layer, to_connection, ml_genn_to_network)
 from bifrost.export.ml_genn import MLGeNNContext
 from bifrost.export.population import export_layer_neuron
 from bifrost.export.connection import export_connection
@@ -104,7 +105,12 @@ mlg_model = Model.convert_tf_model(tf_model, input_type='poisson',
                 connectivity_type='procedural')
 mlg_model.compile(dt=1.0, batch_size=1, rng_seed=0)
 
-net_params = extract_all(mlg_model)
+inp = InputLayer("in", 768, 1, InputSource([28, 28]))
+out = None  # OutputLayer("out", 1, 1, sink=EthernetOutput())
+
+net = ml_genn_to_network(mlg_model, inp, out)
+
+net_params = net[2]
 np.savez_compressed('simple_cnn_params.npz', **net_params)
 
 del net_params
