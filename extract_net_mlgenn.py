@@ -7,7 +7,7 @@ from ml_genn import Model
 import numpy as np
 
 from bifrost.extract.mlgenn.extractor import extract_all
-from bifrost.extract.mlgenn.to_ir import (to_neuron_layer, to_connection)
+from bifrost.parse.to_ir import (to_neuron_layer, to_connection)
 from bifrost.export.ml_genn import MLGeNNContext
 from bifrost.export.population import export_layer_neuron
 from bifrost.export.connection import export_connection
