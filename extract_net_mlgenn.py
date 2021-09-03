@@ -1,5 +1,5 @@
 #import tensorflow as tf
-from bifrost.ir import InputLayer, OutputLayer, InputSource, EthernetOutput
+from bifrost.ir import InputLayer, OutputLayer, DummyTestInputSource, EthernetOutput
 from tensorflow.keras import models#, layers, datasets
 from ml_genn import Model, save_model, load_model
 # from ml_genn.layers import InputType
@@ -13,6 +13,7 @@ from bifrost.export.ml_genn import MLGeNNContext
 from bifrost.export.population import export_layer_neuron
 from bifrost.export.connection import export_connection
 from bifrost.exporter import export_network
+from bifrost.main import get_parser_and_saver, set_recordings
 
 def to_dict(np_file):
     d = {}
@@ -42,11 +43,14 @@ my_model = mlg_model
 # save_model(mlg_model, 'simple_cnn_tf_model.mlg')
 # my_model = load_model('simple_cnn_tf_model.mlg')
 
-
-inp = InputLayer("in", 768, 1, InputSource([28, 28]))
+parser, saver = get_parser_and_saver(my_model)
+inp = InputLayer("in", 768, 1, DummyTestInputSource([28, 28]))
 out = None  # OutputLayer("out", 1, 1, sink=EthernetOutput())
 
+record = {'spikes': [0, 1, -1], 'v': [1]}
 net, context, net_params = ml_genn_to_network(my_model, inp, out)
+set_recordings(net, record)
+
 result = export_network(net, context)
 
 print(result)
