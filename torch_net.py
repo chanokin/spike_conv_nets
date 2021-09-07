@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import norse.torch
 # from models import snn
@@ -140,12 +141,14 @@ print(m.children())
 from bifrost.export.torch import TorchContext
 from bifrost.parse.parse_torch import torch_to_network, torch_to_context
 from bifrost.ir.input import InputLayer, DummyTestInputSource
+from bifrost.exporter import export_network
 inp = InputLayer("in", height * width, 1, DummyTestInputSource([height, width]))
 out = None  # OutputLayer("out", 1, 1, sink=EthernetOutput())
 
 net = torch_to_network(m, inp, out)
 ctx, net_dict = torch_to_context(net, m)
-
+print(export_network(net, ctx))
+np.savez_compressed('torch_net_dict.npz', **net_dict)
 print(net)
 # n_samples = 1
 # n_frames_per_sample = 1
