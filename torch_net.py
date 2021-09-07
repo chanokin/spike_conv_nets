@@ -133,125 +133,135 @@ n_class = 9
 n_in_channels = 1
 
 m = DVSModelSimple2(n_class, n_in_channels, height, width)
+print(m.children())
+from bifrost.export.torch import TorchContext
+from bifrost.parse.parse_torch import torch_to_network, torch_to_context
+from bifrost.ir.input import InputLayer, DummyTestInputSource
+inp = InputLayer("in", 768, 1, DummyTestInputSource([28, 28]))
+out = None  # OutputLayer("out", 1, 1, sink=EthernetOutput())
 
-n_samples = 1
-n_frames_per_sample = 1
-dummy = torch.randn(n_samples, n_frames_per_sample, n_in_channels, height, width)
-parser = Parser(m, dummy)
-pynn_pops_d, pynn_projs_d = parser.generate_pynn_dictionaries()
+net = torch_to_network(m, inp, out)
+ctx = torch_to_context(net, m)
 
-from pprint import pprint
-pprint(pynn_pops_d)
-pprint(pynn_projs_d)
-# do pynn setup
-import spynnaker8 as sim
-# input_dict = {}
-# pynn_pops, pynn_projs = parser.generate_pynn_objects(
-#                             sim, input_dict, pynn_pops_d, pynn_projs_d)
-
-# intercept_simulator(sim, "test_torch_network")
-
-# sim.run(0)
-
-# -------------------------------------------------------------------- #
-# -------------------------------------------------------------------- #
-# -------------------------------------------------------------------- #
-# onnx_path = 'dvs.onnx'
-# torch.onnx.export(m, dummy, onnx_path,
-#                   verbose=True, opset_version=11)
-
-# import onnx
-# from onnx.tools.net_drawer import GetPydotGraph, GetOpNodeProducer
-# import sys
-# import os
-# import matplotlib.pyplot as plt
+print(net)
+# n_samples = 1
+# n_frames_per_sample = 1
+# dummy = torch.randn(n_samples, n_frames_per_sample, n_in_channels, height, width)
+# parser = Parser(m, dummy)
+# pynn_pops_d, pynn_projs_d = parser.generate_pynn_dictionaries()
+#
+# from pprint import pprint
+# pprint(pynn_pops_d)
+# pprint(pynn_projs_d)
+# # do pynn setup
+# import spynnaker8 as sim
+# # input_dict = {}
+# # pynn_pops, pynn_projs = parser.generate_pynn_objects(
+# #                             sim, input_dict, pynn_pops_d, pynn_projs_d)
+#
+# # intercept_simulator(sim, "test_torch_network")
+#
+# # sim.run(0)
+#
+# # -------------------------------------------------------------------- #
+# # -------------------------------------------------------------------- #
+# # -------------------------------------------------------------------- #
+# # onnx_path = 'dvs.onnx'
+# # torch.onnx.export(m, dummy, onnx_path,
+# #                   verbose=True, opset_version=11)
+#
+# # import onnx
+# # from onnx.tools.net_drawer import GetPydotGraph, GetOpNodeProducer
+# # import sys
+# # import os
+# # import matplotlib.pyplot as plt
+# #
+# #
+# # onnx_model = onnx.load(onnx_path)
+# # # print(onnx_model.SerializeToString())
+# #
+# # graph = onnx_model.graph
+# # node = graph.node
+# #
+# # # for n in node:
+# # #     print(n.name)
+# #
+# # onnx.checker.check_model(onnx_model)
+# #
+# # pydot_graph = GetPydotGraph(onnx_model.graph, name=onnx_model.graph.name, rankdir="TB",
+# #                             node_producer=GetOpNodeProducer("docstring"))
+# #
+# # dot_graph_fname = "graph.dot"
+# # pydot_graph.write_dot(dot_graph_fname)
+# # os.system('dot -O -Tpng {}'.format(dot_graph_fname))
+# #
+# # image = plt.imread("{}.png".format(dot_graph_fname))
+# # plt.imshow(image)
+# # plt.axis('off')
+# # plt.show()
+#
+# # -------------------------------------------------------------------- #
+# # -------------------------------------------------------------------- #
+# # -------------------------------------------------------------------- #
+#
+# # from snntoolbox.utils.utils import import_configparser
+# # from snntoolbox.simulation.target_simulators.spiNNaker_target_sim import SNN
+# # configparser = import_configparser()
+# # config = configparser.ConfigParser()
+# # config['paths'] = {
+# #     'path_wd': '.',             # Path to model.
+# # }
+# #
+# # config['tools'] = {
+# #     'evaluate_ann': False,           # Test ANN on dataset before conversion.
+# #     # Normalize weights for full dynamic range.
+# #     'normalize': False,
+# #     'scale_weights_exp': False
+# # }
+# #
+# # config['input'] = {
+# #     'poisson_input': True,           # Images are encodes as spike trains.
+# #     'input_rate': 100,
+# #     'dataset_format': 'poisson',
+# #     'num_poisson_events_per_sample': 100,
+# # }
+# #
+# # config['cell'] = {
+# #     'v': 0.0,
+# #     'v_thresh': 1.0
+# # }
+# #
+# # config['simulation'] = {
+# #     # Chooses execution backend of SNN toolbox.
+# #     'simulator': 'spiNNaker',
+# #     'duration': 50,                 # Number of time steps to run each sample.
+# #     'num_to_test': 5,               # How many test samples to run.
+# #     'batch_size': 1,                # Batch size for simulation.
+# #     # SpiNNaker seems to require 0.1 for comparable results.
+# #     'dt': 0.1,
+# #     'early_stopping': True
+# # }
+# #
+# # config['restrictions'] = {
+# #     'simulators_pynn': {
+# #         'simulator': 'spiNNaker'
+# #     },
+# #     'cellparams_pynn': {
+# #         'v': 0.0,
+# #         'v_thresh': 1.0
+# #     }
+# # }
+# #
+# # config['output'] = {
+# #     'plot_vars': {                  # Various plots (slows down simulation).
+# #     },
+# #     'log_vars': {
+# #     }
+# # }
+# #
+# # snn_parser = SNN(config)
+# # snn_parser.build(m)
+# # snn_parser.save('.', 'snn_model')
 #
 #
-# onnx_model = onnx.load(onnx_path)
-# # print(onnx_model.SerializeToString())
 #
-# graph = onnx_model.graph
-# node = graph.node
-#
-# # for n in node:
-# #     print(n.name)
-#
-# onnx.checker.check_model(onnx_model)
-#
-# pydot_graph = GetPydotGraph(onnx_model.graph, name=onnx_model.graph.name, rankdir="TB",
-#                             node_producer=GetOpNodeProducer("docstring"))
-#
-# dot_graph_fname = "graph.dot"
-# pydot_graph.write_dot(dot_graph_fname)
-# os.system('dot -O -Tpng {}'.format(dot_graph_fname))
-#
-# image = plt.imread("{}.png".format(dot_graph_fname))
-# plt.imshow(image)
-# plt.axis('off')
-# plt.show()
-
-# -------------------------------------------------------------------- #
-# -------------------------------------------------------------------- #
-# -------------------------------------------------------------------- #
-
-# from snntoolbox.utils.utils import import_configparser
-# from snntoolbox.simulation.target_simulators.spiNNaker_target_sim import SNN
-# configparser = import_configparser()
-# config = configparser.ConfigParser()
-# config['paths'] = {
-#     'path_wd': '.',             # Path to model.
-# }
-#
-# config['tools'] = {
-#     'evaluate_ann': False,           # Test ANN on dataset before conversion.
-#     # Normalize weights for full dynamic range.
-#     'normalize': False,
-#     'scale_weights_exp': False
-# }
-#
-# config['input'] = {
-#     'poisson_input': True,           # Images are encodes as spike trains.
-#     'input_rate': 100,
-#     'dataset_format': 'poisson',
-#     'num_poisson_events_per_sample': 100,
-# }
-#
-# config['cell'] = {
-#     'v': 0.0,
-#     'v_thresh': 1.0
-# }
-#
-# config['simulation'] = {
-#     # Chooses execution backend of SNN toolbox.
-#     'simulator': 'spiNNaker',
-#     'duration': 50,                 # Number of time steps to run each sample.
-#     'num_to_test': 5,               # How many test samples to run.
-#     'batch_size': 1,                # Batch size for simulation.
-#     # SpiNNaker seems to require 0.1 for comparable results.
-#     'dt': 0.1,
-#     'early_stopping': True
-# }
-#
-# config['restrictions'] = {
-#     'simulators_pynn': {
-#         'simulator': 'spiNNaker'
-#     },
-#     'cellparams_pynn': {
-#         'v': 0.0,
-#         'v_thresh': 1.0
-#     }
-# }
-#
-# config['output'] = {
-#     'plot_vars': {                  # Various plots (slows down simulation).
-#     },
-#     'log_vars': {
-#     }
-# }
-#
-# snn_parser = SNN(config)
-# snn_parser.build(m)
-# snn_parser.save('.', 'snn_model')
-
-
-
