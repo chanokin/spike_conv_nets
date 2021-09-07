@@ -8,6 +8,7 @@ from norse.torch.functional.lif import LIFParameters
 from norse.torch.module.lif import LIFCell
 from norse.torch.module.leaky_integrator import LICell
 import pytorch_lightning as pl
+import copy
 # from pynn_object_serialisation.functions import (
 #     intercept_simulator, restore_simulator_from_file
 # )
