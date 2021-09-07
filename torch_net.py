@@ -58,33 +58,33 @@ class DVSModelSimple2(pl.LightningModule):
         self.dense = SequentialState(
             nn.Conv2d(32, 32, 7, padding=3, bias=False),
             LICell(p=LIFParameters(method=method, alpha=alpha), dt=dt),
-            nn.BatchNorm2d(32),
+            # nn.BatchNorm2d(32),
         )
 
-        self.score_block2 = nn.Conv2d(16, n_class, 1, bias=False)
-        self.deconv_block2 = nn.ConvTranspose2d(
-            n_class, n_class, 8, stride=4, padding=2, bias=False
-        )
-
-        self.score_dense = nn.Conv2d(32, n_class, 1, bias=False)
-        self.deconv_dense = nn.ConvTranspose2d(
-            n_class, n_class, 16, stride=8, padding=4, bias=False
-        )
-
-        self.final = LICell(dt=dt)
+        # self.score_block2 = nn.Conv2d(16, n_class, 1, bias=False)
+        # self.deconv_block2 = nn.ConvTranspose2d(
+        #     n_class, n_class, 8, stride=4, padding=2, bias=False
+        # )
+        #
+        # self.score_dense = nn.Conv2d(32, n_class, 1, bias=False)
+        # self.deconv_dense = nn.ConvTranspose2d(
+        #     n_class, n_class, 16, stride=8, padding=4, bias=False
+        # )
+        #
+        # self.final = LICell(dt=dt)
 
     def forward(self, x):
         state_block1 = state_block2 = state_block3 = state_dense = state_final = None
 
-        # output              batch,      class,        frame,      height,     width
+        # output              batch,      class,        height,     width
         output = torch.empty(
-            (x.shape[0], self.n_class, x.shape[1], x.shape[3], x.shape[4]),
+            (x.shape[0], self.n_class, x.shape[1], x.shape[2], x.shape[3]),
             device=self.device,
         )
 
         # for each frame
-        for i in range(x.shape[1]):
-            frame = x[:, i, :, :, :]
+        for i in range(1):
+            frame = x[:, :, :, :]
 
             out_block1, state_block1 = self.block1(frame, state_block1)  # 1/2
             out_block2, state_block2 = self.block2(out_block1, state_block2)  # 1/4
@@ -92,27 +92,29 @@ class DVSModelSimple2(pl.LightningModule):
             out_dense, state_dense = self.dense(out_block3, state_dense)
 
             ####### WITH FEATURE FUSION
-            out_score_block2 = self.score_block2(out_block2)
-            out_deconv_block2 = self.deconv_block2(out_score_block2)
+            # out_score_block2 = self.score_block2(out_block2)
+            # out_deconv_block2 = self.deconv_block2(out_score_block2)
 
             # out_score_dense = checkpoint(self.score_dense, out_dense)
-            out_score_dense = self.score_dense(out_dense)
-            out_deconv_dense = self.deconv_dense(out_score_dense)
+            # out_score_dense = self.score_dense(out_dense)
 
-            out_deconv = out_deconv_block2 + out_deconv_dense
-            #######
+            # out_deconv_dense = self.deconv_dense(out_score_dense)
+            #
+            # out_deconv = out_deconv_block2 + out_deconv_dense
+            # #######
+            #
+            # out_final, state_final = self.final(out_deconv, state_final)
+            #
+            # output[:, :, i, :, :] = out_final
 
-            out_final, state_final = self.final(out_deconv, state_final)
+            # self.log("input_mean", frame.mean())
+            # self.log("out_block1_mean", out_block1.mean())
+            # self.log("out_block2_mean", out_block2.mean())
+            # self.log("out_block3_mean", out_block3.mean())
+            # self.log("out_dense_mean", out_dense.mean())
 
-            output[:, :, i, :, :] = out_final
-
-            self.log("input_mean", frame.mean())
-            self.log("out_block1_mean", out_block1.mean())
-            self.log("out_block2_mean", out_block2.mean())
-            self.log("out_block3_mean", out_block3.mean())
-            self.log("out_dense_mean", out_dense.mean())
-
-        return output
+        # return output
+        return out_dense
 
     def training_step(self, batch, batch_idx):
         # training_step defined the train loop.
@@ -137,11 +139,11 @@ print(m.children())
 from bifrost.export.torch import TorchContext
 from bifrost.parse.parse_torch import torch_to_network, torch_to_context
 from bifrost.ir.input import InputLayer, DummyTestInputSource
-inp = InputLayer("in", 768, 1, DummyTestInputSource([28, 28]))
+inp = InputLayer("in", height * width, 1, DummyTestInputSource([height, width]))
 out = None  # OutputLayer("out", 1, 1, sink=EthernetOutput())
 
 net = torch_to_network(m, inp, out)
-ctx = torch_to_context(net, m)
+ctx, net_dict = torch_to_context(net, m)
 
 print(net)
 # n_samples = 1
