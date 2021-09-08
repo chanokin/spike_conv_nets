@@ -1,5 +1,6 @@
 #import tensorflow as tf
-from bifrost.ir import InputLayer, OutputLayer, DummyTestInputSource, EthernetOutput
+from bifrost.ir import (InputLayer, OutputLayer, DummyTestInputSource,
+                        EthernetOutput, PoissonImageDataset)
 from tensorflow.keras import models#, layers, datasets
 from ml_genn import Model, save_model, load_model
 # from ml_genn.layers import InputType
@@ -43,8 +44,11 @@ my_model = mlg_model
 # save_model(mlg_model, 'simple_cnn_tf_model.mlg')
 # my_model = load_model('simple_cnn_tf_model.mlg')
 
+
+
 parser, saver = get_parser_and_saver(my_model)
 inp = InputLayer("in", 768, 1, DummyTestInputSource([28, 28]))
+inp = InputLayer("in", 768, 1, PoissonImageDataset([28, 28]))
 out = None  # OutputLayer("out", 1, 1, sink=EthernetOutput())
 
 record = {'spikes': [0, 1, -1], 'v': [1]}
