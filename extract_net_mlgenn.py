@@ -52,7 +52,8 @@ inp = InputLayer("in", 768, 1, PoissonImageDataset([28, 28]))
 out = None  # OutputLayer("out", 1, 1, sink=EthernetOutput())
 
 record = {'spikes': [0, 1, -1], 'v': [1]}
-net, context, net_params = ml_genn_to_network(my_model, inp, out)
+net, context, net_params = ml_genn_to_network(my_model, inp, out,
+                                              config={'runtime': 10.0})
 set_recordings(net, record)
 
 result = export_network(net, context)

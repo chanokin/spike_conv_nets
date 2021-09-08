@@ -2,6 +2,8 @@ import numpy as np
 import torch
 import norse.torch
 # from models import snn
+from bifrost.ir import OutputLayer, EthernetOutput
+
 from torch_to_spynn import Parser
 import torch.nn as nn
 from norse.torch.module.sequential import SequentialState
@@ -143,7 +145,7 @@ from bifrost.parse.parse_torch import torch_to_network, torch_to_context
 from bifrost.ir.input import InputLayer, DummyTestInputSource
 from bifrost.exporter import export_network
 inp = InputLayer("in", height * width, 1, DummyTestInputSource([height, width]))
-out = None  # OutputLayer("out", 1, 1, sink=EthernetOutput())
+out = OutputLayer("out", 1, 1, sink=EthernetOutput())
 
 net = torch_to_network(m, inp, out)
 ctx, net_dict = torch_to_context(net, m)
