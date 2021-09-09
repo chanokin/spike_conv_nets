@@ -54,16 +54,16 @@ class DVSModelSimple2(pl.LightningModule):
         self.block3 = SequentialState(
             nn.Conv2d(16, 32, 3, padding=1, bias=False),
             LICell(p=LIFParameters(method=method, alpha=alpha), dt=dt),
-            nn.AvgPool2d(2, stride=2, ceil_mode=True),  # 1/8
-            nn.BatchNorm2d(32),
+            # nn.AvgPool2d(2, stride=2, ceil_mode=True),  # 1/8
+            # nn.BatchNorm2d(32),
         )
 
         # dense
-        self.dense = SequentialState(
-            nn.Conv2d(32, 32, 7, padding=3, bias=False),
-            LICell(p=LIFParameters(method=method, alpha=alpha), dt=dt),
-            # nn.BatchNorm2d(32),
-        )
+        # self.dense = SequentialState(
+        #     nn.Conv2d(32, 32, 7, padding=3, bias=False),
+        #     LICell(p=LIFParameters(method=method, alpha=alpha), dt=dt),
+        #     # nn.BatchNorm2d(32),
+        # )
 
         # self.score_block2 = nn.Conv2d(16, n_class, 1, bias=False)
         # self.deconv_block2 = nn.ConvTranspose2d(
@@ -93,7 +93,7 @@ class DVSModelSimple2(pl.LightningModule):
             out_block1, state_block1 = self.block1(frame, state_block1)  # 1/2
             out_block2, state_block2 = self.block2(out_block1, state_block2)  # 1/4
             out_block3, state_block3 = self.block3(out_block2, state_block3)  # 1/8
-            out_dense, state_dense = self.dense(out_block3, state_dense)
+            # out_dense, state_dense = self.dense(out_block3, state_dense)
 
             ####### WITH FEATURE FUSION
             # out_score_block2 = self.score_block2(out_block2)
@@ -118,7 +118,7 @@ class DVSModelSimple2(pl.LightningModule):
             # self.log("out_dense_mean", out_dense.mean())
 
         # return output
-        return out_dense
+        return out_block3
 
     def training_step(self, batch, batch_idx):
         # training_step defined the train loop.
@@ -148,10 +148,10 @@ from bifrost.exporter import export_network
 inp = InputLayer("in", height * width, 1, SpiNNakerSPIFInput([height, width]))
 out = OutputLayer("out", 1, 1, sink=EthernetOutput())
 
-net = torch_to_network(m, inp, out)
+net = torch_to_network(m, inp, out, {'runtime': 0.0})
 ctx, net_dict = torch_to_context(net, m)
 with open("torch_as_spynn_net.py", 'w') as f:
-    f.write(export_network(net, ctx))
+    f.write(export_network(net, ctx,))
 
 np.savez_compressed('torch_net_dict.npz', **net_dict)
 print(net)
