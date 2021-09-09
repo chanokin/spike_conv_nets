@@ -149,7 +149,9 @@ out = OutputLayer("out", 1, 1, sink=EthernetOutput())
 
 net = torch_to_network(m, inp, out)
 ctx, net_dict = torch_to_context(net, m)
-print(export_network(net, ctx))
+with open("torch_as_spynn_net.py", 'w') as f:
+    f.write(export_network(net, ctx))
+
 np.savez_compressed('torch_net_dict.npz', **net_dict)
 print(net)
 # n_samples = 1
