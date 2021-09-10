@@ -16,6 +16,56 @@ import copy
 #     intercept_simulator, restore_simulator_from_file
 # )
 
+def set_parameter_buffers(model):
+    for k0 in model._modules:
+        if isinstance(model._modules[k0], SequentialState):
+            for k1 in model._modules[k0]._modules:
+                set_parameter_buffers_per_layer(model._modules[k0]._modules[k1])
+        elif not isinstance(model._modules[k0], torch.nn.CrossEntropyLoss):
+            set_parameter_buffers_per_layer(model._modules[k0])
+
+
+def set_parameter_buffers_per_layer(module):
+    _li = ['tau_mem_inv', 'tau_syn_inv', 'v_leak', 'Size'
+               ]
+    _lif = _li + ['v_reset', 'v_th', 'alpha']
+    params = {
+        'Conv2d': [
+            'kernel_size', 'in_channels', 'out_channels',
+            'output_padding', 'padding', 'stride'
+        ],
+        'LICell': {
+            'LIFParameters': _lif,
+            'LIParameters': _li,
+        },
+        'LIFCell': {
+            'LIFParameters': _lif,
+            'LIParameters': _li
+        },
+        'AvgPool2d': [
+            'kernel_size', 'padding', 'stride'
+        ],
+    }
+    mod_name = module.__class__.__name__
+    if mod_name not in params:
+        return
+
+    if mod_name in ('LICell', 'LIFCell'):
+        param_name = module.p.__class__.__name__
+        param_list = params[mod_name][param_name]
+    else:
+        param_list = params[mod_name]
+
+    for p in param_list:
+        frm = module.p if mod_name == 'LICell' else module
+        try:
+            val = getattr(frm, p)
+        except AttributeError as e:
+            val = getattr(frm, p)()
+
+        module._buffers[p] = val
+
+
 class DVSModelSimple2(pl.LightningModule):
     def __init__(
         self,
@@ -53,7 +103,7 @@ class DVSModelSimple2(pl.LightningModule):
         # block 3
         self.block3 = SequentialState(
             nn.Conv2d(16, 32, 3, padding=1, bias=False),
-            LICell(p=LIFParameters(method=method, alpha=alpha), dt=dt),
+            # LICell(p=LIFParameters(method=method, alpha=alpha), dt=dt),
             # nn.AvgPool2d(2, stride=2, ceil_mode=True),  # 1/8
             # nn.BatchNorm2d(32),
         )
@@ -75,7 +125,8 @@ class DVSModelSimple2(pl.LightningModule):
         #     n_class, n_class, 16, stride=8, padding=4, bias=False
         # )
         #
-        # self.final = LICell(dt=dt)
+        self.final = LICell(dt=dt)
+
 
     def forward(self, x):
         state_block1 = state_block2 = state_block3 = state_dense = state_final = None
@@ -108,6 +159,7 @@ class DVSModelSimple2(pl.LightningModule):
             # #######
             #
             # out_final, state_final = self.final(out_deconv, state_final)
+            out_final, state_final = self.final(out_block3, state_final)
             #
             # output[:, :, i, :, :] = out_final
 
@@ -118,7 +170,7 @@ class DVSModelSimple2(pl.LightningModule):
             # self.log("out_dense_mean", out_dense.mean())
 
         # return output
-        return out_block3
+        return out_final
 
     def training_step(self, batch, batch_idx):
         # training_step defined the train loop.
@@ -137,13 +189,29 @@ class DVSModelSimple2(pl.LightningModule):
 width = height = 32
 n_class = 9
 n_in_channels = 1
-
+n_samples = 1
+n_frames_per_sample = 1
+# checkpoint = torch.load('epoch=131-step=123815.ckpt')
 m = DVSModelSimple2(n_class, n_in_channels, height, width)
+dummy = torch.randn(n_samples, n_in_channels, height, width)
+set_parameter_buffers(m)
+x = m.forward(dummy)
+
+childern = list(m.children())
+parameters = list(m.parameters())
+named_params = list(m.named_parameters())
+state_dict = m.state_dict(keep_vars=True)
 print(m.children())
+print(m.parameters())
+modules = dict(m.named_modules())
+
+
 from bifrost.export.torch import TorchContext
 from bifrost.parse.parse_torch import torch_to_network, torch_to_context
 from bifrost.ir.input import InputLayer, DummyTestInputSource
 from bifrost.exporter import export_network
+
+
 # inp = InputLayer("in", height * width, 1, DummyTestInputSource([height, width]))
 inp = InputLayer("in", height * width, 1, SpiNNakerSPIFInput([height, width]))
 out = OutputLayer("out", 1, 1, sink=EthernetOutput())
