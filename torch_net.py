@@ -26,8 +26,7 @@ def set_parameter_buffers(model):
 
 
 def set_parameter_buffers_per_layer(module):
-    _li = ['tau_mem_inv', 'tau_syn_inv', 'v_leak', 'Size'
-               ]
+    _li = ['tau_mem_inv', 'tau_syn_inv', 'v_leak']
     _lif = _li + ['v_reset', 'v_th', 'alpha']
     params = {
         'Conv2d': [
@@ -58,10 +57,7 @@ def set_parameter_buffers_per_layer(module):
 
     for p in param_list:
         frm = module.p if mod_name == 'LICell' else module
-        try:
-            val = getattr(frm, p)
-        except AttributeError as e:
-            val = getattr(frm, p)()
+        val = getattr(frm, p)
 
         module._buffers[p] = val
 
@@ -193,6 +189,7 @@ n_samples = 1
 n_frames_per_sample = 1
 # checkpoint = torch.load('epoch=131-step=123815.ckpt')
 m = DVSModelSimple2(n_class, n_in_channels, height, width)
+m.eval()
 dummy = torch.randn(n_samples, n_in_channels, height, width)
 set_parameter_buffers(m)
 x = m.forward(dummy)
@@ -205,6 +202,17 @@ print(m.children())
 print(m.parameters())
 modules = dict(m.named_modules())
 
+shapes = {}
+x = dummy
+for i, k in enumerate(modules):
+    if (isinstance(modules[k], (torch.nn.CrossEntropyLoss, SequentialState)) or
+        k == ''):
+        continue
+    print(k)
+    x = modules[k](x)
+    if isinstance(x, tuple):
+        x = x[0]
+    shapes[k] = x.data.shape
 
 from bifrost.export.torch import TorchContext
 from bifrost.parse.parse_torch import torch_to_network, torch_to_context
