@@ -55,8 +55,9 @@ record = {'spikes': [0, 1, -1], 'v': [1]}
 net, context, net_params = ml_genn_to_network(my_model, inp, out,
                                               config={'runtime': 10.0})
 set_recordings(net, record)
-
-result = export_network(net, context)
-
-print(result)
+np.savez_compressed('ml_genn_as_spynn_net_dict.npz', **net_params)
+# result = export_network(net, context)
+with open("ml_genn_as_spynn_net.py", 'w') as f:
+    f.write(export_network(net, context,))
+# print(result)
 
