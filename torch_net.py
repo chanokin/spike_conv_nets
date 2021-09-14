@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import norse.torch
 # from models import snn
-from bifrost.ir import OutputLayer, EthernetOutput, SpiNNakerSPIFInput
+from bifrost.ir import OutputLayer, EthernetOutput, SpiNNakerSPIFInput, RandomPoissonSource
 
 from torch_to_spynn import Parser
 import torch.nn as nn
@@ -222,8 +222,12 @@ from bifrost.ir.input import InputLayer, DummyTestInputSource
 from bifrost.exporter import export_network
 
 
-# inp = InputLayer("in", height * width, 1, DummyTestInputSource([height, width]))
-inp = InputLayer("in", height * width, 1, SpiNNakerSPIFInput([height, width]))
+# shape, #rates
+source = RandomPoissonSource([height, width], [10])
+# source = DummyTestInputSource([height, width])
+# source = SpiNNakerSPIFInput([height, width])
+# name, size, channels, source, record
+inp = InputLayer("in", height * width, 1, source)
 out = OutputLayer("out", 1, 1, sink=EthernetOutput())
 
 net = torch_to_network(m, inp, out, {'runtime': 0.0})
