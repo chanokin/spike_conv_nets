@@ -17,12 +17,17 @@ import copy
 # )
 
 def set_parameter_buffers(model):
-    for k0 in model._modules:
-        if isinstance(model._modules[k0], SequentialState):
-            for k1 in model._modules[k0]._modules:
-                set_parameter_buffers_per_layer(model._modules[k0]._modules[k1])
-        elif not isinstance(model._modules[k0], torch.nn.CrossEntropyLoss):
-            set_parameter_buffers_per_layer(model._modules[k0])
+    mdls = dict(model.named_modules())
+    for k, m in mdls.items():
+        if k == '' or isinstance(m, (SequentialState, torch.nn.CrossEntropyLoss)):
+            continue
+        set_parameter_buffers_per_layer(m)
+    # for k0 in model._modules:
+    #     if isinstance(model._modules[k0], SequentialState):
+    #         for k1 in model._modules[k0]._modules:
+    #             set_parameter_buffers_per_layer(model._modules[k0]._modules[k1])
+    #     elif not isinstance(model._modules[k0], torch.nn.CrossEntropyLoss):
+    #         set_parameter_buffers_per_layer(model._modules[k0])
 
 
 def set_parameter_buffers_per_layer(module):
