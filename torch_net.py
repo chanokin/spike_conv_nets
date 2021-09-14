@@ -200,8 +200,8 @@ named_params = list(m.named_parameters())
 state_dict = m.state_dict(keep_vars=True)
 torch.save({'state_dict': state_dict}, 'torch_net_checkpoint.ptck')
 
-print(m.children())
-print(m.parameters())
+# print(m.children())
+# print(m.parameters())
 modules = dict(m.named_modules())
 
 shapes = {}
@@ -210,7 +210,7 @@ for i, k in enumerate(modules):
     if (isinstance(modules[k], (torch.nn.CrossEntropyLoss, SequentialState)) or
         k == ''):
         continue
-    print(k)
+    # print(k)
     x = modules[k](x)
     if isinstance(x, tuple):
         x = x[0]
