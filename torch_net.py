@@ -95,15 +95,15 @@ class DVSModelSimple2(pl.LightningModule):
 
         # block 2
         self.block2 = SequentialState(
-            nn.Conv2d(8, 16, 3, padding=1, bias=False),
+            nn.Conv2d(8, 8, 3, padding=1, bias=False),
             LICell(p=LIFParameters(method=method, alpha=alpha), dt=dt),
             nn.AvgPool2d(2, stride=2, ceil_mode=True),  # 1/4
-            nn.BatchNorm2d(16),
+            nn.BatchNorm2d(8),
         )
 
         # block 3
         self.block3 = SequentialState(
-            nn.Conv2d(16, 32, 3, padding=1, bias=False),
+            nn.Conv2d(8, 8, 3, padding=1, bias=False),
             # LICell(p=LIFParameters(method=method, alpha=alpha), dt=dt),
             # nn.AvgPool2d(2, stride=2, ceil_mode=True),  # 1/8
             # nn.BatchNorm2d(32),
