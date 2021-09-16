@@ -1,7 +1,6 @@
 import numpy as np
 import spynnaker8 as sim
 from pyNN.space import Grid2D
-import cv2
 import matplotlib.pyplot as plt
 import sys
 import field_encoding as fe
@@ -38,7 +37,7 @@ run_time = 4.
 
 sim.setup(timestep=1.)
 
-# sim.set_number_of_neurons_per_core(sim.NIF_curr_delta, (4, 4))
+sim.set_number_of_neurons_per_core(sim.NIF_curr_delta, (4, 4))
 
 # spike_idx = fe.encode_coords((in_shape[0] // 2), (in_shape[1] // 2),
 #                              in_shape[1], in_shape[0], ROWS_AS_MSB)
