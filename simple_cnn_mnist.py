@@ -49,9 +49,9 @@ def run_network(start_char, n_digits, n_test=10000):
 
     filename = "simple_cnn_network_elements.npz"
 
-    data = np.load(filename, allow_pickle=True)
+    # data = np.load(filename, allow_pickle=True)
 
-    layer_dicts = extract_all(data)
+    # layer_dicts = extract_all(data)
 
     thresholds = dict(
         conv2d=1,#3.1836495399475098,
@@ -61,10 +61,10 @@ def run_network(start_char, n_digits, n_test=10000):
         dense_2=1,#2.36885929107666,
     )
 
-    order0 = data['order']
-    order = order0[:]
-    ml_conns = data['conns'].item()
-    ml_param = data['params'].item()
+    # order0 = data['order']
+    # order = order0[:]
+    # ml_conns = data['conns'].item()
+    # ml_param = data['params'].item()
 
     # print(list(data.keys()))
     X, y = fetch_openml('mnist_784', version=1, return_X_y=True, as_frame=False)
