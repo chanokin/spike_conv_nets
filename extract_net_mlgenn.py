@@ -28,7 +28,7 @@ def to_dict(np_file):
 
 tf_model = models.load_model('simple_cnn_tf_model.tf')
 mlg_model = Model.convert_tf_model(tf_model, input_type='poisson', 
-                connectivity_type='procedural')
+                                   connectivity_type='procedural')
 mlg_model.compile(dt=1.0, batch_size=1, rng_seed=0)
 
 my_model = mlg_model
@@ -87,9 +87,15 @@ source = PoissonImageDataset(
 inp = InputLayer("in", in_size, 1, source=source)
 out = None  # OutputLayer("out", 1, 1, sink=EthernetOutput())
 
+config = {
+    'runtime': 10.0,
+    'constraints': {
+        'max_neurons': [('NIF_curr_delta', (32, 16))],
+    },
+}
 record = {'spikes': [0, 1, -1], 'v': [1]}
 net, context, net_params = ml_genn_to_network(my_model, inp, out,
-                                              config={'runtime': 10.0})
+                                              config=config)
 set_recordings(net, record)
 np.savez_compressed('ml_genn_as_spynn_net_dict.npz', **net_params)
 # result = export_network(net, context)
