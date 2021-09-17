@@ -57,7 +57,7 @@ load_mnist_images = "\n".join([
     f'{tab}X_train, X_test, y_train, y_test = train_test_split(',
     f'{tab * 2}X, y, train_size=5000,',
     f'{tab * 2}test_size=10000, shuffle=False)',
-    f'{tab}return ({{0: X_test[start_sample: start_sample + num_samples]}},',
+    f'{tab}return ({{0: X_test[start_sample: start_sample + num_samples].T}},',
     f'{tab * 3}y_test[start_sample: start_sample + num_samples])\n ',
 ])
 
