@@ -26,7 +26,7 @@ def initializer(shape, dtype=None):
 
 def vgg_block(num_convs, num_channels, dropout, input_shape=None,
               kernel_init=initializer, kernel_regular=regularizers.l2(0.0001)):
-    blk = models.Sequential()
+    block = []
     for i in range(num_convs):
         if i == 0 and input_shape is not None:
             cnv = layers.Conv2D(num_channels, 3, padding='same', activation='relu',
@@ -39,34 +39,36 @@ def vgg_block(num_convs, num_channels, dropout, input_shape=None,
                     kernel_initializer=kernel_init,
                     kernel_regularizer=kernel_regular)
 
-        blk.add(cnv)
+        block.append(cnv)
         if i < (num_channels - 1):
-            blk.add(layers.Dropout(dropout))
+            block.append(layers.Dropout(dropout))
 
-    blk.add(layers.AveragePooling2D(2))
-    return blk
+    block.append(layers.AveragePooling2D(2))
+
+    return block
 
 
 def vgg(conv_arch, input_shape):
-    net = models.Sequential(name='vgg_net')
     # The convulational part
+    model_layers = []
     for i, (num_convs, num_channels, dropout) in enumerate(conv_arch):
         in_sh = input_shape if i == 0 else None
-        net.add(vgg_block(num_convs, num_channels, dropout, input_shape=in_sh))
+        model_layers.extend(vgg_block(num_convs, num_channels, dropout, input_shape=in_sh))
     # The fully-connected part
-    net.add(
-        models.Sequential([
-            layers.Flatten(),
-            layers.Dense(4096, activation="relu", use_bias=False,
-                         kernel_regularizer=regularizer),
-            layers.Dropout(0.5),
-            layers.Dense(4096, activation="relu", use_bias=False,
-                         kernel_regularizer=regularizer),
-            layers.Dropout(0.5),
-            layers.Dense(y_train.max() + 1, activation="softmax",
-                         use_bias=False, kernel_regularizer=regularizer),
-        ])
-    )
+
+    model_layers.extend([
+        layers.Flatten(),
+        layers.Dense(4096, activation="relu", use_bias=False,
+                     kernel_regularizer=regularizer),
+        layers.Dropout(0.5),
+        layers.Dense(4096, activation="relu", use_bias=False,
+                     kernel_regularizer=regularizer),
+        layers.Dropout(0.5),
+        layers.Dense(y_train.max() + 1, activation="softmax",
+                     use_bias=False, kernel_regularizer=regularizer),
+    ])
+
+    net = models.Sequential(model_layers, name="vgg_from_blocks")
     return net
 
 if __name__ == '__main__':
@@ -106,9 +108,9 @@ if __name__ == '__main__':
     conv_arch = (
         (2, 64, 0.3),
         (2, 128, 0.4),
-        (3, 256, 0.4),
-        (3, 512, 0.4),
-        (3, 512, 0.4)
+        # (3, 256, 0.4),
+        # (3, 512, 0.4),
+        # (3, 512, 0.4)
     )
 
     # Create, train and evaluate TensorFlow model
@@ -127,9 +129,11 @@ if __name__ == '__main__':
 
         if args.augment_training:
             steps_per_epoch = x_train.shape[0] // 256
-            tf_model.fit(iter_train, steps_per_epoch=steps_per_epoch, epochs=200, callbacks=callbacks)
+            tf_model.fit(iter_train, steps_per_epoch=steps_per_epoch, epochs=5,
+                         callbacks=callbacks)
         else:
-            tf_model.fit(x_train, y_train, batch_size=256, epochs=200, shuffle=True, callbacks=callbacks)
+            tf_model.fit(x_train, y_train, batch_size=256, epochs=5,
+                         shuffle=True, callbacks=callbacks)
 
         models.save_model(tf_model, 'vgg16_tf_model', save_format='h5')
 
