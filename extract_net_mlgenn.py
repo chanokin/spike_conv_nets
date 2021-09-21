@@ -15,6 +15,7 @@ from bifrost.export.population import export_layer_neuron
 from bifrost.export.connection import export_connection
 from bifrost.exporter import export_network
 from bifrost.main import get_parser_and_saver, set_recordings
+from bifrost.export.configurations import SUPPORTED_CONFIGS
 
 def to_dict(np_file):
     d = {}
@@ -89,8 +90,8 @@ out = None  # OutputLayer("out", 1, 1, sink=EthernetOutput())
 
 config = {
     'runtime': 10.0,
-    'constraints': {
-        'max_neurons': [('NIF_curr_delta', (32, 16))],
+    'configuration': {
+        SUPPORTED_CONFIGS.MAX_NEURONS_PER_COMPUTE_UNIT: [('NIF_curr_delta', (32, 16))],
     },
 }
 record = {'spikes': [0, 1, -1], 'v': [1]}
