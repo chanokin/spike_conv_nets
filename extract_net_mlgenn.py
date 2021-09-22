@@ -64,7 +64,7 @@ load_mnist_images = "\n".join([
 
 transform_to_rates = "\n".join([
     # def transform(images_dictionary):
-    f"{tab}return {{k: (1.0 / 255.0) * images_dictionary[k] \n"
+    f"{tab}return {{k: (100.0 / 255.0) * images_dictionary[k] \n"
     f"{tab * 3}for k in images_dictionary}}"
 ])
 
@@ -94,7 +94,10 @@ config = {
         SUPPORTED_CONFIGS.MAX_NEURONS_PER_COMPUTE_UNIT: [('NIF_curr_delta', (32, 16))],
     },
 }
-record = {'spikes': [0, 1, -1], 'v': [1]}
+record = {
+    'spikes': [0, 1, -1],
+    # 'v': [1]
+}
 net, context, net_params = ml_genn_to_network(my_model, inp, out,
                                               config=config)
 set_recordings(net, record)
