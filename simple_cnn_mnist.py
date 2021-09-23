@@ -1,6 +1,5 @@
 import spynnaker8 as sim
 import numpy as np
-import mnist
 import matplotlib.pyplot as plt
 import plotting
 import sys

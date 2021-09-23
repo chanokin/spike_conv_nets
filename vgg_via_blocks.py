@@ -114,7 +114,7 @@ if __name__ == '__main__':
     )
 
     # Create, train and evaluate TensorFlow model
-    n_epochs = 50
+    n_epochs = 200
     tf_model = vgg(conv_arch, x_train.shape[1:])
     if args.reuse_tf_model:
         with CustomObjectScope({'initializer': initializer}):
