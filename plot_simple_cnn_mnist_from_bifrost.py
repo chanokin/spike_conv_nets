@@ -29,12 +29,14 @@ off_time = in_cfg['off_time_ms']
 period = on_time + off_time
 run_time = period * n_samples
 for layer in recs:
-    spikes = recs[layer][0].segments[0].spiketrains
-    images = plotting.spikes_to_images(spikes, shapes[layer], run_time, period)
-    fig, axs = plt.subplots(1, n_samples, sharey=True)
-    plt.suptitle(layer)
-    for i, img in enumerate(images[0]):
-        axs[i].imshow(img)
-    plt.savefig(f"images_layer_{layer}.png", dpi=150)
+    for channel in recs[layer]:
+        spikes = recs[layer][channel].segments[0].spiketrains
+        images = plotting.spikes_to_images(spikes, shapes[layer], run_time, period)
+        fig, axs = plt.subplots(1, n_samples, sharey=True)
+        plt.suptitle(f"{layer}, {channel}")
+        for i, img in enumerate(images[0]):
+            axs[i].imshow(img)
+        plt.savefig(f"images_layer_{layer}_channel_{channel:03d}.png", dpi=150)
+        plt.close(fig)
 
     # print(spikes)
