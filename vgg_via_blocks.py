@@ -114,6 +114,7 @@ if __name__ == '__main__':
     )
 
     # Create, train and evaluate TensorFlow model
+    n_epochs = 50
     tf_model = vgg(conv_arch, x_train.shape[1:])
     if args.reuse_tf_model:
         with CustomObjectScope({'initializer': initializer}):
@@ -129,10 +130,10 @@ if __name__ == '__main__':
 
         if args.augment_training:
             steps_per_epoch = x_train.shape[0] // 256
-            tf_model.fit(iter_train, steps_per_epoch=steps_per_epoch, epochs=5,
+            tf_model.fit(iter_train, steps_per_epoch=steps_per_epoch, epochs=n_epochs,
                          callbacks=callbacks)
         else:
-            tf_model.fit(x_train, y_train, batch_size=256, epochs=5,
+            tf_model.fit(x_train, y_train, batch_size=256, epochs=n_epochs,
                          shuffle=True, callbacks=callbacks)
 
         models.save_model(tf_model, 'vgg16_tf_model', save_format='h5')
