@@ -26,6 +26,7 @@ in_cfg = data_dict['input_configuration']
 n_samples = in_cfg['num_samples']
 on_time = in_cfg['on_time_ms']
 off_time = in_cfg['off_time_ms']
+classes = in_cfg['target_classes']
 period = on_time + off_time
 run_time = period * n_samples
 for layer in recs:
@@ -46,9 +47,11 @@ for layer in recs:
         fig, axs = plt.subplots(1, n_samples, sharey=True)
         plt.suptitle(f"{layer}, {channel}")
         for i, img in enumerate(images[0]):
-            # new_image = np.zeros(new_size)
-            # new_image[:img.size] = img.flatten()
-            axs[i].imshow(img)
+            axs[i].set_title(classes[i])
+            new_image = np.zeros(new_size)
+            new_image[:img.size] = img.flatten()
+            axs[i].imshow(new_image.reshape(new_shape))
+            # axs[i].imshow(img)
         plt.savefig(f"images_layer_{layer}_channel_{channel:03d}.png", dpi=150)
         plt.close(fig)
 
