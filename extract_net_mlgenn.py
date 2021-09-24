@@ -100,7 +100,7 @@ inp = InputLayer("in", in_size, 1, source=source)
 out = None  # OutputLayer("out", 1, 1, sink=EthernetOutput())
 
 config = {
-    'runtime': 10.0,
+    # 'runtime': 0.0,
     'split_runs': True,
     'configuration': {
         SUPPORTED_CONFIGS.MAX_NEURONS_PER_COMPUTE_UNIT: [('NIF_curr_delta', (32, 16))],

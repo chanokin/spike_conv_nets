@@ -29,12 +29,25 @@ off_time = in_cfg['off_time_ms']
 period = on_time + off_time
 run_time = period * n_samples
 for layer in recs:
+    shape = shapes[layer]
+
     for channel in recs[layer]:
         spikes = recs[layer][channel].segments[0].spiketrains
-        images = plotting.spikes_to_images(spikes, shapes[layer], run_time, period)
+        images = plotting.spikes_to_images(spikes, shape, run_time, period)
+        if 'dense' in layer:
+            size = int(np.prod(shape))
+            rows = int(np.round(np.sqrt(size)))
+            cols = size // rows + int(size % rows > 0)
+            new_shape = [rows, cols]
+        else:
+            new_shape = shape
+
+        new_size = int(np.prod(new_shape))
         fig, axs = plt.subplots(1, n_samples, sharey=True)
         plt.suptitle(f"{layer}, {channel}")
         for i, img in enumerate(images[0]):
+            # new_image = np.zeros(new_size)
+            # new_image[:img.size] = img.flatten()
             axs[i].imshow(img)
         plt.savefig(f"images_layer_{layer}_channel_{channel:03d}.png", dpi=150)
         plt.close(fig)
