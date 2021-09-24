@@ -107,7 +107,7 @@ config = {
     },
 }
 record = {
-    'spikes': [0, 1, 2, 3, -1],
+    'spikes': [0, 1, 2, 3, 4, 5],
     # 'v': [1]
 }
 net, context, net_params = ml_genn_to_network(my_model, inp, out,
