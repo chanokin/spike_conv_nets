@@ -40,7 +40,7 @@ def vgg_block(num_convs, num_channels, dropout, input_shape=None,
                     kernel_regularizer=kernel_regular)
 
         block.append(cnv)
-        if i < (num_channels - 1):
+        if i < (num_convs - 1):
             block.append(layers.Dropout(dropout))
 
     block.append(layers.AveragePooling2D(2))
@@ -107,15 +107,17 @@ if __name__ == '__main__':
     # num convolution layers, num channels, dropout between Conv layers
     conv_arch = (
         (2, 64, 0.3),
-        (2, 128, 0.4),
-        (3, 256, 0.4),
-        (3, 512, 0.4),
-        (3, 512, 0.4)
+        # (2, 128, 0.4),
+        # (3, 256, 0.4),
+        # (3, 512, 0.4),
+        # (3, 512, 0.4)
     )
 
     # Create, train and evaluate TensorFlow model
-    n_epochs = 200
+    n_epochs = 100
     tf_model = vgg(conv_arch, x_train.shape[1:])
+    tf_model.summary()
+
     if args.reuse_tf_model:
         with CustomObjectScope({'initializer': initializer}):
             tf_model = models.load_model('vgg16_tf_model')
