@@ -60,7 +60,8 @@ class LIFConvNet(torch.nn.Module):
 
         if self.voltages is None:
             self.voltages = torch.zeros(
-                seq_length, batch_size, 10, device=x.device
+                seq_length, batch_size, 10, device=x.device,
+                # requires_grad=True
             )
         voltages = self.voltages
 

@@ -50,9 +50,9 @@ def save(path, epoch, model, optimizer, is_best=False):
 def train(model, device, train_loader, optimizer, epoch, clip_grad,
           grad_clip_value, epochs, log_interval, do_plot, plot_interval,
           seq_length, writer,):
-    torch.autograd.set_detect_anomaly(True)
+    # torch.autograd.set_detect_anomaly(True)
 
-    model.train()
+    # model.train()
     losses = []
 
     batch_len = len(train_loader)
@@ -63,7 +63,7 @@ def train(model, device, train_loader, optimizer, epoch, clip_grad,
         optimizer.zero_grad()
         output = model(data)
         loss = torch.nn.functional.nll_loss(output, target)
-        loss.backward(retain_graph=True)
+        loss.backward()#retain_graph=True)
 
         if clip_grad:
             torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip_value)
@@ -122,7 +122,7 @@ learning_rate = 2e-3
 act_model = 'super'
 optimizer = 'adam'
 random_seed = 1374
-device = 'cpu'
+device = 'cpu' if bool(0) else 'cuda'
 
 torch.manual_seed(random_seed)
 np.random.seed(random_seed)
