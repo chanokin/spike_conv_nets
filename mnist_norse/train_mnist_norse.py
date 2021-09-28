@@ -50,6 +50,8 @@ def save(path, epoch, model, optimizer, is_best=False):
 def train(model, device, train_loader, optimizer, epoch, clip_grad,
           grad_clip_value, epochs, log_interval, do_plot, plot_interval,
           seq_length, writer,):
+    torch.autograd.set_detect_anomaly(True)
+
     model.train()
     losses = []
 
@@ -61,7 +63,7 @@ def train(model, device, train_loader, optimizer, epoch, clip_grad,
         optimizer.zero_grad()
         output = model(data)
         loss = torch.nn.functional.nll_loss(output, target)
-        loss.backward()
+        loss.backward(retain_graph=True)
 
         if clip_grad:
             torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip_value)

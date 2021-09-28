@@ -42,6 +42,11 @@ class LIFConvNet(torch.nn.Module):
         batch_size = x.shape[1]
         seq_length = x.shape[0]
 
+        s0 = None
+        s1 = None
+        s2 = None
+        s3 = None
+
         if self.only_first_spike:
             # delete all spikes except for first
             zeros = torch.zeros_like(x.cpu()).detach().numpy()
@@ -63,11 +68,11 @@ class LIFConvNet(torch.nn.Module):
         for in_step in range(seq_length):
             x_this_step = x[in_step, :]
             z = self.conv1(x_this_step)
-            z, s = self.lif1(z)
+            z, s0 = self.lif1(z, s0)
 
             z = self.pool1(z)
             z = self.conv2(z)
-            z, s = self.lif2(z)
+            z, s1 = self.lif2(z, s1)
 
             z = self.pool2(z)  # batch, 8 channels, 4x4 neurons
 
@@ -75,13 +80,14 @@ class LIFConvNet(torch.nn.Module):
             z = z.view(batch_size, -1)
 
             z = self.dense1(z)
-            z, s = self.lif3(z)
+            z, s2 = self.lif3(z, s2)
 
             z = self.dense2(z)
-            z, s = self.lif4(z)
+            z, s3 = self.lif4(z, s3)
 
-            voltages[in_step, :] = s.v
+            voltages[in_step, :] = s3.v.clone().detach()
 
+        # return voltages
 
         m, _ = torch.max(voltages, 0)
         log_p_y = torch.nn.functional.log_softmax(m, dim=1)
