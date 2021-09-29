@@ -136,4 +136,5 @@ dmypy.json
 *.npz
 *.pdf
 
-
+**/*_CODE/
+**/*.egg-info/
