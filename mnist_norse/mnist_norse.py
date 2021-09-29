@@ -7,11 +7,16 @@ from norse.torch.module.encode import ConstantCurrentLIFEncoder
 from norse.torch.functional.lif import LIFParameters
 from norse.torch.module.lif import LIFCell
 from norse.torch import SequentialState
+import pytorch_lightning as pl
 
-class LIFConvNet(torch.nn.Module):
+
+class LIFConvNet(pl.LightningModule):
     def __init__(self, input_features, seq_length, input_scale=1,
-                 model="super", only_first_spike=False,):
+                 model="super", only_first_spike=False, optimizer='adam',
+                 learning_rate=2e-3):
         super(LIFConvNet, self).__init__()
+        self.optimizer = optimizer
+        self.learning_rate = learning_rate
         self.constant_current_encoder = ConstantCurrentLIFEncoder(seq_length=seq_length)
         self.only_first_spike = only_first_spike
         self.input_features = input_features
@@ -90,3 +95,17 @@ class LIFConvNet(torch.nn.Module):
         log_p_y = torch.nn.functional.log_softmax(m, dim=1)
 
         return log_p_y
+
+    def training_step(self, batch, batch_idx):
+        x, y = batch
+        out = self(x)
+        loss = torch.nn.functional.nll_loss(out, y)
+        return loss
+
+    def configure_optimizers(self):
+        if self.optimizer == "adam":
+            opt = torch.optim.Adam
+        else:
+            opt = torch.optim.SGD
+
+        return opt(self.parameters(), lr=self.learning_rate, weight_decay=1e-6)
