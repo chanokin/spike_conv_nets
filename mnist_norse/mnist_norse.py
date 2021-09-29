@@ -31,7 +31,6 @@ class LIFConvNet(torch.nn.Module):
         self.dense2 = torch.nn.Linear(64, 10)
         self.lif4 = LIFCell(p=LIFParameters(method=model, alpha=100.0),)
 
-        self.voltages = None
         self.seq_length = seq_length
         self.input_scale = input_scale
 
@@ -58,11 +57,7 @@ class LIFConvNet(torch.nn.Module):
                     spike_counter[batch, nrn] += 1
             x = torch.from_numpy(zeros).to(x.device)
 
-        if self.voltages is None:
-            self.voltages = torch.zeros(
-                seq_length, batch_size, 10, device=x.device,
-                # requires_grad=True
-            )
+        output = []
 
 
         x = x.reshape(seq_length, batch_size, 1, 28, 28)
@@ -86,12 +81,12 @@ class LIFConvNet(torch.nn.Module):
             z = self.dense2(z)
             z, s3 = self.lif4(z, s3)
 
-            self.voltages[in_step, :] = s3.v#.clone().detach()
+            output.append(s3.v)#.clone().detach()
 
         # return voltages
+        self.voltages = torch.stack(output)
 
         m, _ = torch.max(self.voltages, 0)
         log_p_y = torch.nn.functional.log_softmax(m, dim=1)
 
         return log_p_y
-
