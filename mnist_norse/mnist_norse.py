@@ -63,7 +63,7 @@ class LIFConvNet(torch.nn.Module):
                 seq_length, batch_size, 10, device=x.device,
                 # requires_grad=True
             )
-        voltages = self.voltages
+
 
         x = x.reshape(seq_length, batch_size, 1, 28, 28)
         for in_step in range(seq_length):
@@ -86,11 +86,11 @@ class LIFConvNet(torch.nn.Module):
             z = self.dense2(z)
             z, s3 = self.lif4(z, s3)
 
-            voltages[in_step, :] = s3.v#.clone().detach()
+            self.voltages[in_step, :] = s3.v#.clone().detach()
 
         # return voltages
 
-        m, _ = torch.max(voltages, 0)
+        m, _ = torch.max(self.voltages, 0)
         log_p_y = torch.nn.functional.log_softmax(m, dim=1)
 
         return log_p_y
