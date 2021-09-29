@@ -86,7 +86,7 @@ class LIFConvNet(torch.nn.Module):
             z = self.dense2(z)
             z, s3 = self.lif4(z, s3)
 
-            voltages[in_step, :] = s3.v.clone().detach()
+            voltages[in_step, :] = s3.v#.clone().detach()
 
         # return voltages
 

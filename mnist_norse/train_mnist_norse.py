@@ -122,7 +122,7 @@ learning_rate = 2e-3
 act_model = 'super'
 optimizer = 'adam'
 random_seed = 1374
-device = 'cpu' if bool(0) else 'cuda'
+device = 'cpu' if bool(1) else 'cuda'
 
 torch.manual_seed(random_seed)
 np.random.seed(random_seed)
