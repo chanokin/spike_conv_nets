@@ -5,8 +5,42 @@ from mnist_norse import LIFConvNet
 import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
 import pytorch_lightning as pl
+from bifrost.extract.torch.parameter_buffers import set_parameter_buffers
 
-epochs = 10
+
+def retry_jittered_backoff(f, num_retries=5):
+    # Based on:
+    # https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
+    import time
+    import random
+    cap = 1.0                  # max sleep time is 1s
+    base = 0.01                # initial sleep time is 10ms
+    sleep = base               # initial sleep time is 10ms
+
+    for i in range(num_retries):
+        try:
+            return f()
+        except RuntimeError as e:
+            if i == num_retries - 1:
+                raise e
+            else:
+                continue
+        time.sleep(sleep)
+        sleep = min(cap, random.uniform(base, sleep * 3))
+
+
+def pick_gpu():
+    for i in range(torch.cuda.device_count()):
+        torch.cuda.set_device(i)
+        try:
+            torch.ones(1).cuda()
+        except RuntimeError:
+            continue
+        return i
+    raise RuntimeError("No GPUs available.")
+
+
+epochs = 2
 batch_size = 32
 seq_length = 200  # time steps
 learning_rate = 2e-3
@@ -61,59 +95,14 @@ model = LIFConvNet(
 
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 # pl.Trainer.from_argparse_args()
-trainer = pl.Trainer(gpus=1, max_epochs=epochs)
+trainer = pl.Trainer(gpus=[0],
+                     max_epochs=epochs)
 trainer.fit(model, train_loader)
 
-#
-# writer = SummaryWriter()
-#
-# training_losses = []
-# mean_losses = []
-# test_losses = []
-# accuracies = []
-#
-# for epoch in range(epochs):
-#     training_loss, mean_loss = train(
-#         model,
-#         device,
-#         train_loader,
-#         optimizer,
-#         epoch,
-#         clip_grad=False,
-#         grad_clip_value=1.0,
-#         epochs=1,
-#         log_interval=1,
-#         do_plot=True,
-#         plot_interval=1,
-#         seq_length=seq_length,
-#         writer=writer,
-#     )
-#     test_loss, accuracy = test(
-#         model, device, test_loader, epoch, method=act_model, writer=writer
-#     )
-#
-#     training_losses += training_loss
-#     mean_losses.append(mean_loss)
-#     test_losses.append(test_loss)
-#     accuracies.append(accuracy)
-#
-#     max_accuracy = np.max(np.array(accuracies))
-#
-#
-#     model_path = f"mnist-{epoch}.pt"
-#     save(
-#         model_path,
-#         model=model,
-#         optimizer=optimizer,
-#         epoch=epoch,
-#         is_best=accuracy > max_accuracy,
-#     )
-#
-# model_path = "mnist-final.pt"
-# save(
-#     model_path,
-#     epoch=epoch,
-#     model=model,
-#     optimizer=optimizer,
-#     is_best=accuracy > max_accuracy,
-# )
+set_parameter_buffers(model)
+model_path = "mnist-final.pt"
+torch.save(
+    dict(model=model.state_dict(),
+         optimizer=optimizer, ),
+    model_path,
+)
