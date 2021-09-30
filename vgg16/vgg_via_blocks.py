@@ -107,10 +107,10 @@ if __name__ == '__main__':
     # num convolution layers, num channels, dropout between Conv layers
     conv_arch = (
         (2, 64, 0.3),
-        (2, 128, 0.4),
-        (3, 256, 0.4),
-        (3, 512, 0.4),
-        (3, 512, 0.4)
+        # (2, 128, 0.4),
+        # (3, 256, 0.4),
+        # (3, 512, 0.4),
+        # (3, 512, 0.4)
     )
 
     # Create, train and evaluate TensorFlow model
