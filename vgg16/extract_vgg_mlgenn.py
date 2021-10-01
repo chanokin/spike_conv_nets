@@ -27,7 +27,7 @@ def to_dict(np_file):
     return d
 
 model_idx = 1
-path = f'./saves/vgg16_tf_model_{model_idx:02d}_blocks'
+path = f'./saves/vgg16_tf_model_{model_idx:02d}_blocks.h5'
 tf_model = models.load_model(path)
 mlg_model = Model.convert_tf_model(tf_model, input_type='poisson', 
                                    connectivity_type='procedural')
