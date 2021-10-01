@@ -1,7 +1,8 @@
+import sys
 from time import perf_counter
 import tensorflow as tf
-from tensorflow.keras import (models, layers, datasets, callbacks, optimizers,
-                              initializers, regularizers)
+# from tensorflow.keras import (models, layers, datasets, callbacks, optimizers,
+#                               regularizers)
 from tensorflow.keras.utils import CustomObjectScope
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from ml_genn import Model
@@ -25,25 +26,25 @@ def initializer(shape, dtype=None):
 
 
 def vgg_block(num_convs, num_channels, dropout, input_shape=None,
-              kernel_init=initializer, kernel_regular=regularizers.l2(0.0001)):
+              kernel_init=initializer, kernel_regular=tf.keras.regularizers.l2(0.0001)):
     block = []
     for i in range(num_convs):
         if i == 0 and input_shape is not None:
-            cnv = layers.Conv2D(num_channels, 3, padding='same', activation='relu',
+            cnv = tf.keras.layers.Conv2D(num_channels, 3, padding='same', activation='relu',
                     use_bias=False, input_shape=input_shape,
                     kernel_initializer=kernel_init,
                     kernel_regularizer=kernel_regular)
         else:
-            cnv = layers.Conv2D(num_channels, 3, padding='same', activation='relu',
+            cnv = tf.keras.layers.Conv2D(num_channels, 3, padding='same', activation='relu',
                     use_bias=False,
                     kernel_initializer=kernel_init,
                     kernel_regularizer=kernel_regular)
 
         block.append(cnv)
         if i < (num_convs - 1):
-            block.append(layers.Dropout(dropout))
+            block.append(tf.keras.layers.Dropout(dropout))
 
-    block.append(layers.AveragePooling2D(2))
+    block.append(tf.keras.layers.AveragePooling2D(2))
 
     return block
 
@@ -57,18 +58,18 @@ def vgg(conv_arch, input_shape):
     # The fully-connected part
 
     model_layers.extend([
-        layers.Flatten(),
-        layers.Dense(4096, activation="relu", use_bias=False,
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dense(4096, activation="relu", use_bias=False,
                      kernel_regularizer=regularizer),
-        layers.Dropout(0.5),
-        layers.Dense(4096, activation="relu", use_bias=False,
+        tf.keras.layers.Dropout(0.5),
+        tf.keras.layers.Dense(4096, activation="relu", use_bias=False,
                      kernel_regularizer=regularizer),
-        layers.Dropout(0.5),
-        layers.Dense(y_train.max() + 1, activation="softmax",
+        tf.keras.layers.Dropout(0.5),
+        tf.keras.layers.Dense(y_train.max() + 1, activation="softmax",
                      use_bias=False, kernel_regularizer=regularizer),
     ])
 
-    net = models.Sequential(model_layers, name="vgg_from_blocks")
+    net = tf.keras.models.Sequential(model_layers, name="vgg_from_blocks")
     return net
 
 if __name__ == '__main__':
@@ -79,7 +80,7 @@ if __name__ == '__main__':
         tf.config.experimental.set_memory_growth(gpu, True)
 
     # Retrieve and normalise CIFAR-10 dataset
-    (x_train, y_train), (x_test, y_test) = datasets.cifar10.load_data()
+    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
     x_train = x_train[:args.n_train_samples] / 255.0
     x_train -= np.average(x_train)
     y_train = y_train[:args.n_train_samples, 0]
@@ -102,17 +103,22 @@ if __name__ == '__main__':
         iter_train = data_gen.flow(x_train, y_train, batch_size=256)
 
     # Create L2 regularizer
-    regularizer = regularizers.l2(0.0001)
+    regularizer = tf.keras.regularizers.l2(0.0001)
 
     # num convolution layers, num channels, dropout between Conv layers
     conv_arch = (
         (2, 64, 0.3),
-        # (2, 128, 0.4),
-        # (3, 256, 0.4),
-        # (3, 512, 0.4),
-        # (3, 512, 0.4)
+        (2, 128, 0.4),
+        (3, 256, 0.4),
+        (3, 512, 0.4),
+        (3, 512, 0.4)
     )
+    try:
+        n_blocks = int(sys.argv[1])
+    except:
+        n_blocks = 1
 
+    conv_arch = conv_arch[:n_blocks]
     # Create, train and evaluate TensorFlow model
     n_epochs = 100
     tf_model = vgg(conv_arch, x_train.shape[1:])
@@ -120,13 +126,14 @@ if __name__ == '__main__':
 
     if args.reuse_tf_model:
         with CustomObjectScope({'initializer': initializer}):
-            tf_model = models.load_model('vgg16_tf_model')
+            tf_model = tf.keras.models.load_model(f'vgg16_tf_model_{n_blocks}_')
     else:
-        callbacks = [callbacks.LearningRateScheduler(schedule)]
+        callbacks = [tf.keras.callbacks.LearningRateScheduler(schedule)]
         if args.record_tensorboard:
             callbacks.append(callbacks.TensorBoard(log_dir="logs", histogram_freq=1))
 
-        optimizer = optimizers.SGD(lr=0.05, momentum=0.9)
+        optimizer = tf.keras.optimizers.SGD(lr=0.05, momentum=0.9)
+        # optimizer = tf.keras.optimizers.SGD(lr=0.05, momentum=0.9)
 
         tf_model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
@@ -138,7 +145,7 @@ if __name__ == '__main__':
             tf_model.fit(x_train, y_train, batch_size=256, epochs=n_epochs,
                          shuffle=True, callbacks=callbacks)
 
-        models.save_model(tf_model, 'vgg16_tf_model', save_format='h5')
+        tf.keras.models.save_model(tf_model, 'vgg16_tf_model', save_format='h5')
 
     tf_eval_start_time = perf_counter()
     tf_model.evaluate(x_test, y_test)
