@@ -3,8 +3,8 @@ from time import perf_counter
 import tensorflow as tf
 # from tensorflow.keras import (models, layers, datasets, callbacks, optimizers,
 #                               regularizers)
-from tensorflow.keras.utils import CustomObjectScope
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
+# from tensorflow.keras.utils import CustomObjectScope
+# from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from ml_genn import Model
 from ml_genn.utils import parse_arguments, raster_plot
 from six import iteritems
