@@ -97,7 +97,7 @@ if __name__ == '__main__':
     # If we should augment training data
     if args.augment_training:
         # Create image data generator
-        data_gen = ImageDataGenerator(horizontal_flip=True)
+        data_gen = tf.keras.preprocessing.image.ImageDataGenerator(horizontal_flip=True)
 
         # Get training iterator
         iter_train = data_gen.flow(x_train, y_train, batch_size=256)
@@ -125,12 +125,12 @@ if __name__ == '__main__':
     tf_model.summary()
 
     if args.reuse_tf_model:
-        with CustomObjectScope({'initializer': initializer}):
+        with tf.keras.utils.CustomObjectScope({'initializer': initializer}):
             tf_model = tf.keras.models.load_model(f'vgg16_tf_model_{n_blocks}_')
     else:
         callbacks = [tf.keras.callbacks.LearningRateScheduler(schedule)]
         if args.record_tensorboard:
-            callbacks.append(callbacks.TensorBoard(log_dir="logs", histogram_freq=1))
+            callbacks.append(tf.keras.callbacks.TensorBoard(log_dir="logs", histogram_freq=1))
 
         optimizer = tf.keras.optimizers.SGD(lr=0.05, momentum=0.9)
         # optimizer = tf.keras.optimizers.SGD(lr=0.05, momentum=0.9)
