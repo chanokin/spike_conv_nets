@@ -124,9 +124,10 @@ if __name__ == '__main__':
     tf_model = vgg(conv_arch, x_train.shape[1:])
     tf_model.summary()
 
+    filename = f'vgg16_tf_model_{n_blocks}_blocks'
     if args.reuse_tf_model:
         with tf.keras.utils.CustomObjectScope({'initializer': initializer}):
-            tf_model = tf.keras.models.load_model(f'vgg16_tf_model_{n_blocks}_')
+            tf_model = tf.keras.models.load_model(filename)
     else:
         callbacks = [tf.keras.callbacks.LearningRateScheduler(schedule)]
         if args.record_tensorboard:
@@ -145,7 +146,7 @@ if __name__ == '__main__':
             tf_model.fit(x_train, y_train, batch_size=256, epochs=n_epochs,
                          shuffle=True, callbacks=callbacks)
 
-        tf.keras.models.save_model(tf_model, 'vgg16_tf_model', save_format='h5')
+        tf.keras.models.save_model(tf_model, filename, save_format='h5')
 
     tf_eval_start_time = perf_counter()
     tf_model.evaluate(x_test, y_test)
