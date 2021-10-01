@@ -113,10 +113,7 @@ if __name__ == '__main__':
         (3, 512, 0.4),
         (3, 512, 0.4)
     )
-    try:
-        n_blocks = int(sys.argv[1])
-    except:
-        n_blocks = 1
+    n_blocks = 1
 
     conv_arch = conv_arch[:n_blocks]
     # Create, train and evaluate TensorFlow model
@@ -124,7 +121,7 @@ if __name__ == '__main__':
     tf_model = vgg(conv_arch, x_train.shape[1:])
     tf_model.summary()
 
-    filename = f'vgg16_tf_model_{n_blocks}_blocks'
+    filename = f'vgg16_tf_model_{n_blocks:02d}_blocks.h5'
     if args.reuse_tf_model:
         with tf.keras.utils.CustomObjectScope({'initializer': initializer}):
             tf_model = tf.keras.models.load_model(filename)
