@@ -40,7 +40,7 @@ def pick_gpu():
     raise RuntimeError("No GPUs available.")
 
 
-epochs = 2
+epochs = 1
 batch_size = 32
 seq_length = 200  # time steps
 learning_rate = 2e-3
@@ -66,23 +66,34 @@ data_transform = torchvision.transforms.Compose(
     ]
 )
 
+total_train_size = 60000
+train_size = 6000
 train_loader = torch.utils.data.DataLoader(
-    torchvision.datasets.MNIST(
-        root=".",
-        train=True,
-        # download=True,
-        transform=data_transform,
-    ),
+    torch.utils.data.random_split(
+        torchvision.datasets.MNIST(
+            root=".",
+            train=True,
+            download=True,
+            transform=data_transform,
+        ),
+        [train_size, total_train_size - train_size]
+    )[0],
     batch_size=batch_size,
     shuffle=True,
+    num_workers=16,
 )
 
+total_test_size = 10000
+test_size = 1000
 test_loader = torch.utils.data.DataLoader(
-    torchvision.datasets.MNIST(
-        root=".",
-        train=False,
-        transform=data_transform,
-    ),
+    torch.utils.data.random_split(
+        torchvision.datasets.MNIST(
+            root=".",
+            train=False,
+            transform=data_transform,
+        ),
+        [test_size, total_test_size - test_size]
+    )[0],
     batch_size=batch_size,
 )
 
@@ -102,7 +113,7 @@ trainer.fit(model, train_loader)
 set_parameter_buffers(model)
 model_path = "mnist-final.pt"
 torch.save(
-    dict(model=model.state_dict(),
+    dict(model=model.state_dict(keep_vars=True),
          optimizer=optimizer, ),
     model_path,
 )
