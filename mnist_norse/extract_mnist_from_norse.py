@@ -5,6 +5,7 @@ from bifrost.parse.parse_torch import torch_to_network, torch_to_context
 from bifrost.ir import (InputLayer, PoissonImageDataset)
 from bifrost.main import get_parser_and_saver, set_recordings
 from bifrost.exporter import export_network
+from bifrost.export.configurations import SUPPORTED_CONFIGS
 
 
 model = NorseModel(28*28, 1)
@@ -54,9 +55,18 @@ source = PoissonImageDataset(
     on_time_ms=400.0,
     off_time_ms=100.0,
 )
+
+config = {
+    # 'runtime': 0.0,
+    'split_runs': True,
+    'configuration': {
+        SUPPORTED_CONFIGS.MAX_NEURONS_PER_COMPUTE_UNIT: [('NIF_curr_delta', (32, 16))],
+    },
+}
+
 # inp = InputLayer("in", 768, 1, DummyTestInputSource([28, 28]))
 bf_input = InputLayer("in", in_size, 1, source=source)
-bf_net, bf_context, bf_net_dict = parser(model, bf_input)
+bf_net, bf_context, bf_net_dict = parser(model, bf_input, config=config)
 
 record = {
     # 'spikes': [0, 1, 2, 3, 4, 5],
