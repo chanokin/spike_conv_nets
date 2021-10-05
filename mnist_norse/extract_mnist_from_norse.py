@@ -3,7 +3,8 @@ import numpy as np
 from mnist_norse import LIFConvNet as NorseModel
 from bifrost.parse.parse_torch import torch_to_network, torch_to_context
 from bifrost.ir import (InputLayer, PoissonImageDataset)
-from bifrost.main import get_parser_and_saver
+from bifrost.main import get_parser_and_saver, set_recordings
+from bifrost.exporter import export_network
 
 
 model = NorseModel(28*28, 1)
@@ -27,15 +28,6 @@ load_mnist_images = f"\n{tab}".join([
     f'{tab}X, y, train_size=5000,',
     f'{tab}test_size=10000, shuffle=False)',
     f'X_test = (X_test[start_sample: start_sample + num_samples].T)',
-    f'shape_in = np.asarray({in_shape})',
-    f'n_in = int(np.prod(shape_in))',
-    f'in_ids = np.arange(0, n_in)',
-    f'xy_in_ids = fe.convert_ids(in_ids, shape=shape_in)',
-    f'small = np.where(xy_in_ids < np.prod(shape_in))',
-    # in_ids = in_ids[small]
-    f'xy_in_ids = xy_in_ids[small]',
-    f'for i in range(num_samples):',
-    f'{tab}X_test[xy_in_ids, i] = X_test[small, i]',
     f'y_test = y_test[start_sample: start_sample + num_samples]',
     f'return ({{0: X_test}}, y_test)\n ',
 ])
@@ -49,7 +41,6 @@ transform_to_rates = f"\n{tab}".join([
 imports = [
     'from sklearn.datasets import fetch_openml',
     'from sklearn.model_selection import train_test_split',
-    'import field_encoding as fe'
     # 'from sklearn.utils import check_random_state'
 ]
 source = PoissonImageDataset(
@@ -65,6 +56,16 @@ source = PoissonImageDataset(
 )
 # inp = InputLayer("in", 768, 1, DummyTestInputSource([28, 28]))
 bf_input = InputLayer("in", in_size, 1, source=source)
-bf_net = parser(model, bf_input)
+bf_net, bf_context, bf_net_dict = parser(model, bf_input)
 
-print(bf_net)
+record = {
+    # 'spikes': [0, 1, 2, 3, 4, 5],
+    'spikes': [-1],
+    # 'v': [1]
+}
+set_recordings(bf_net, record)
+# np.savez_compressed('ml_genn_as_spynn_net_dict.npz', **net_params)
+# result = export_network(net, context)
+with open("torch_as_spynn_net.py", 'w') as f:
+    f.write(export_network(bf_net, bf_context,))
+
