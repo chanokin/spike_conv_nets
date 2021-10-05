@@ -71,7 +71,6 @@ transform_to_rates = f"\n{tab}".join([
 imports = [
     'from sklearn.datasets import fetch_openml',
     'from sklearn.model_selection import train_test_split',
-    'import field_encoding as fe'
     # 'from sklearn.utils import check_random_state'
 ]
 source = PoissonImageDataset(
