@@ -10,7 +10,7 @@ model = NorseModel(28*28, 1)
 
 checkpoint = torch.load('mnist-final.pt',
                         map_location=torch.device('cpu'))
-model.load_state_dict(checkpoint['model_state_dict'])
+model.load_state_dict(checkpoint['model'], strict=False)
 
 print(model)
 
