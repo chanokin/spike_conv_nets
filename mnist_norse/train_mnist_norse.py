@@ -113,7 +113,7 @@ trainer.fit(model, train_loader)
 set_parameter_buffers(model)
 model_path = "mnist-final.pt"
 torch.save(
-    dict(model=model.state_dict(keep_vars=True),
+    dict(state_dict=model.state_dict(keep_vars=True),
          optimizer=optimizer, ),
     model_path,
 )
