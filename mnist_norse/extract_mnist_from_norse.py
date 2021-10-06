@@ -6,14 +6,21 @@ from bifrost.ir import (InputLayer, PoissonImageDataset)
 from bifrost.main import get_parser_and_saver, set_recordings
 from bifrost.exporter import export_network
 from bifrost.export.configurations import SUPPORTED_CONFIGS
+from bifrost.extract.torch.parameter_buffers import set_parameter_buffers
 
 
 model = NorseModel(28*28, 1)
 
 checkpoint = torch.load('mnist-final.pt',
                         map_location=torch.device('cpu'))
-model.load_state_dict(checkpoint['model'], strict=False)
+model.load_state_dict(checkpoint['state_dict'], strict=False)
 
+# set_parameter_buffers(model)
+# model_path = "mnist-final.pt"
+# torch.save(
+#     dict(state_dict=model.state_dict(keep_vars=True)),
+#     model_path,
+# )
 print(model)
 
 tab = " " * 4
@@ -60,7 +67,7 @@ config = {
     # 'runtime': 0.0,
     'split_runs': True,
     'configuration': {
-        SUPPORTED_CONFIGS.MAX_NEURONS_PER_COMPUTE_UNIT: [('NIF_curr_delta', (32, 16))],
+        SUPPORTED_CONFIGS.MAX_NEURONS_PER_COMPUTE_UNIT: [('IF_curr_alpha', (32, 16))],
     },
 }
 
@@ -69,8 +76,8 @@ bf_input = InputLayer("in", in_size, 1, source=source)
 bf_net, bf_context, bf_net_dict = parser(model, bf_input, config=config)
 
 record = {
-    # 'spikes': [0, 1, 2, 3, 4, 5],
-    'spikes': [-1],
+    'spikes': [0, 1, 2, 3, 4],
+    # 'spikes': [-1],
     # 'v': [1]
 }
 set_recordings(bf_net, record)
