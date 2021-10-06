@@ -15,7 +15,7 @@ def to_dict(np_file):
 _colors = ['red', 'green', 'blue', 'cyan', 'orange',
            'magenta', 'black', 'yellow', ]
 
-input_filename = "../Bifrost_Network_recordings.npz"
+input_filename = "./Bifrost_Network_recordings.npz"
 np_data = np.load(input_filename, allow_pickle=True)
 data_dict = to_dict(np_data)
 
