@@ -48,10 +48,16 @@ for layer in recs:
         fig, axs = plt.subplots(1, n_samples, sharey=True)
         plt.suptitle(f"{layer}, {channel}")
         for i, img in enumerate(images[0]):
-            axs[i].set_title(classes[i])
+            if n_samples == 1:
+                axs.set_title(classes[i])
+            else:
+                axs[i].set_title(classes[i])
             new_image = np.zeros(new_size)
             new_image[:img.size] = img.flatten()
-            axs[i].imshow(new_image.reshape(new_shape))
+            if n_samples == 1:
+                axs.imshow(new_image.reshape(new_shape))
+            else:
+                axs[i].imshow(new_image.reshape(new_shape))
             # axs[i].imshow(img)
         plt.savefig(f"images_layer_{layer}_channel_{channel:03d}.png", dpi=150)
         plt.close(fig)
