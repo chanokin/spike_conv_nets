@@ -46,7 +46,7 @@ def run_network(start_char, n_digits, n_test=10000):
 
     most_significant_rows = ROWS_AS_MSB
 
-    filename = "simple_cnn_network_elements.npz"
+    filename = "../simple_cnn_network_elements.npz"
 
     # data = np.load(filename, allow_pickle=True)
 
@@ -444,7 +444,7 @@ def run_network(start_char, n_digits, n_test=10000):
     splt.plot_rates(rates, order, prefix=prefix)
     splt.plot_spikes(order, spikes, sim_time, digit_duration, prefix)
 
-    np.savez_compressed('activity_for_simple_cnn.npz',
+    np.savez_compressed('../activity_for_simple_cnn.npz',
                         order=order, shapes=shapes, test_y=test_y, kernels=kernels,
                         spikes=spikes, total_sim_time=n_digits*sim_time,
                         digit_duration=digit_duration, offsets=offsets,
