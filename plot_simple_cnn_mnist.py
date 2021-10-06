@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import plotting
-import field_encoding as fe
+from spike_conv_nets.simple_cnn_mlgenn import plotting
 
 ROW_AS_SMB = bool(1)
 

@@ -102,9 +102,9 @@ record = {
 net, context, net_params = ml_genn_to_network(my_model, inp, out,
                                               config=config)
 set_recordings(net, record)
-np.savez_compressed('ml_genn_as_spynn_net_dict.npz', **net_params)
+np.savez_compressed('./ml_genn_as_spynn_net_dict.npz', **net_params)
 # result = export_network(net, context)
-with open("ml_genn_as_spynn_net.py", 'w') as f:
+with open("./ml_genn_as_spynn_net.py", 'w') as f:
     f.write(export_network(net, context,))
 # print(result)
 

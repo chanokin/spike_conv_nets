@@ -3,8 +3,7 @@ import matplotlib.gridspec as gspec
 import numpy as np
 import sys
 import os
-import plotting as ptt
-import time
+from spike_conv_nets.simple_cnn_mlgenn import plotting as ptt
 import cv2
 
 
