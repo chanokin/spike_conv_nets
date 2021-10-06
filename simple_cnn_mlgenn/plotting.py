@@ -1,9 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-import field_encoding as fe
-from field_encoding import ROWS_AS_MSB
-
 
 def spikes_to_bins(spikes, max_t, t_bin):
     tbins = np.arange(0, max_t, t_bin)

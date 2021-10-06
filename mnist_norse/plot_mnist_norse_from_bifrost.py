@@ -33,6 +33,8 @@ for layer in recs:
 
     for channel in recs[layer]:
         spikes = recs[layer][channel].segments[0].spiketrains
+        voltages = recs[layer][channel].segments[0].filter(name='v')
+
         images = plotting.spikes_to_images(spikes, shape, run_time, period)
         if 'dense' in layer:
             size = int(np.prod(shape))
@@ -53,5 +55,11 @@ for layer in recs:
             # axs[i].imshow(img)
         plt.savefig(f"images_layer_{layer}_channel_{channel:03d}.png", dpi=150)
         plt.close(fig)
+
+
+        if len(voltages):
+            fig, ax = plt.subplots(1, 1)
+            ax.plot(voltages[0])
+            plt.savefig(f"voltages_layer_{layer}_channel_{channel:03d}.png", dpi=150)
 
     # print(spikes)
