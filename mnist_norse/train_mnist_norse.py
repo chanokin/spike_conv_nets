@@ -5,6 +5,7 @@ from mnist_norse import LIFConvNet
 import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ModelCheckpoint
 from bifrost.extract.torch.parameter_buffers import set_parameter_buffers
 
 
@@ -105,9 +106,15 @@ model = LIFConvNet(
 ).to(device)
 
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+checkpoint_callback = ModelCheckpoint(
+    monitor='val_loss',
+    dirpath='./',
+    filename='sample-mnist-{epoch:02d}-{val_loss:.2f}'
+)
 # pl.Trainer.from_argparse_args()
 trainer = pl.Trainer(gpus=[0],
-                     max_epochs=epochs)
+                     max_epochs=epochs,
+                     callbacks=[checkpoint_callback])
 trainer.fit(model, train_loader)
 
 set_parameter_buffers(model)
