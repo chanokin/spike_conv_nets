@@ -21,19 +21,19 @@ class LIFConvNet(pl.LightningModule):
         self.only_first_spike = only_first_spike
         self.input_features = input_features
 
-        self.conv1 = torch.nn.Conv2d(1, 16, 5, 1)
+        self.conv1 = torch.nn.Conv2d(1, 16, 5, 1, bias=False)
         self.lif1 = LIFCell(p=LIFParameters(method=model, alpha=100.0),)
 
         self.pool1 = torch.nn.AvgPool2d(2)
-        self.conv2 = torch.nn.Conv2d(16, 8, 5, 1)
+        self.conv2 = torch.nn.Conv2d(16, 8, 5, 1, bias=False)
         self.lif2 = LIFCell(p=LIFParameters(method=model, alpha=100.0),)
 
         self.pool2 = torch.nn.AvgPool2d(2)
 
-        self.dense1 = torch.nn.Linear(128, 64)
+        self.dense1 = torch.nn.Linear(128, 64, bias=False)
         self.lif3 = LIFCell(p=LIFParameters(method=model, alpha=100.0),)
 
-        self.dense2 = torch.nn.Linear(64, 10)
+        self.dense2 = torch.nn.Linear(64, 10, bias=False)
         self.lif4 = LIFCell(p=LIFParameters(method=model, alpha=100.0),)
 
         self.seq_length = seq_length
@@ -108,4 +108,4 @@ class LIFConvNet(pl.LightningModule):
         else:
             opt = torch.optim.SGD
 
-        return opt(self.parameters(), lr=self.learning_rate, weight_decay=1e-6)
+        return opt(self.parameters(), lr=self.learning_rate, weight_decay=0)#1e-6)
