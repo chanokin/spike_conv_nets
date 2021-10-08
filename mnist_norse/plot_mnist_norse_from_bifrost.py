@@ -29,9 +29,11 @@ classes = in_cfg['target_classes']
 period = on_time + off_time
 run_time = period * n_samples
 for layer in recs:
+
     shape = shapes[layer]
 
     for channel in recs[layer]:
+        print(layer, channel)
         spikes = recs[layer][channel].segments[0].spiketrains
         voltages = recs[layer][channel].segments[0].filter(name='v')
 
@@ -62,10 +64,18 @@ for layer in recs:
         plt.savefig(f"images_layer_{layer}_channel_{channel:03d}.png", dpi=150)
         plt.close(fig)
 
+        fig, ax = plt.subplots(1, 1)
+        plt.suptitle(f"raster {layer}, {channel}")
+        for neuron_idx, times in enumerate(spikes):
+            ax.plot(times, neuron_idx * np.ones_like(times), '.b', markersize=1)
+        plt.savefig(f"raster_layer_{layer}_channel_{channel:03d}.png", dpi=150)
+        plt.close(fig)
+
 
         if len(voltages):
             fig, ax = plt.subplots(1, 1)
-            ax.plot(voltages[0])
+            plt.suptitle(f"voltages {layer}, {channel}")
+            ax.plot(voltages[0], linewidth=0.1)
             plt.savefig(f"voltages_layer_{layer}_channel_{channel:03d}.png", dpi=150)
 
     # print(spikes)

@@ -41,7 +41,7 @@ def pick_gpu():
     raise RuntimeError("No GPUs available.")
 
 
-epochs = 1
+epochs = 10
 batch_size = 32
 seq_length = 200  # time steps
 learning_rate = 2e-3
@@ -108,7 +108,7 @@ model = LIFConvNet(
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 checkpoint_callback = ModelCheckpoint(
     monitor='val_loss',
-    dirpath='./',
+    dirpath='./checkpoints',
     filename='sample-mnist-{epoch:02d}-{val_loss:.2f}'
 )
 # pl.Trainer.from_argparse_args()
