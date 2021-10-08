@@ -41,7 +41,7 @@ def pick_gpu():
     raise RuntimeError("No GPUs available.")
 
 
-epochs = 1
+epochs = 10
 batch_size = 32
 seq_length = 200  # time steps
 learning_rate = 2e-3
