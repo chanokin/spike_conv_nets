@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import torch.utils.data
 
-from norse.torch.module.encode import ConstantCurrentLIFEncoder
+from norse.torch.module.encode import PoissonEncoder
 from norse.torch.functional.lif import LIFParameters
 from norse.torch.module.lif import LIFCell
 from norse.torch import SequentialState
@@ -17,7 +17,7 @@ class LIFConvNet(pl.LightningModule):
         super(LIFConvNet, self).__init__()
         self.optimizer = optimizer
         self.learning_rate = learning_rate
-        self.constant_current_encoder = ConstantCurrentLIFEncoder(seq_length=seq_length)
+        self.input_encoder = PoissonEncoder(seq_length=seq_length, f_max=100)
         self.only_first_spike = only_first_spike
         self.input_features = input_features
 
@@ -40,7 +40,7 @@ class LIFConvNet(pl.LightningModule):
         self.input_scale = input_scale
 
     def forward(self, x):
-        x = self.constant_current_encoder(
+        x = self.input_encoder(
             x.view(-1, self.input_features) * self.input_scale
         )
         batch_size = x.shape[1]

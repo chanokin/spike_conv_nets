@@ -29,9 +29,11 @@ classes = in_cfg['target_classes']
 period = on_time + off_time
 run_time = period * n_samples
 for layer in recs:
+
     shape = shapes[layer]
 
     for channel in recs[layer]:
+        print(layer, channel)
         spikes = recs[layer][channel].segments[0].spiketrains
         voltages = recs[layer][channel].segments[0].filter(name='v')
 
@@ -48,18 +50,32 @@ for layer in recs:
         fig, axs = plt.subplots(1, n_samples, sharey=True)
         plt.suptitle(f"{layer}, {channel}")
         for i, img in enumerate(images[0]):
-            axs[i].set_title(classes[i])
+            if n_samples == 1:
+                axs.set_title(classes[i])
+            else:
+                axs[i].set_title(classes[i])
             new_image = np.zeros(new_size)
             new_image[:img.size] = img.flatten()
-            axs[i].imshow(new_image.reshape(new_shape))
+            if n_samples == 1:
+                axs.imshow(new_image.reshape(new_shape))
+            else:
+                axs[i].imshow(new_image.reshape(new_shape))
             # axs[i].imshow(img)
         plt.savefig(f"images_layer_{layer}_channel_{channel:03d}.png", dpi=150)
+        plt.close(fig)
+
+        fig, ax = plt.subplots(1, 1)
+        plt.suptitle(f"raster {layer}, {channel}")
+        for neuron_idx, times in enumerate(spikes):
+            ax.plot(times, neuron_idx * np.ones_like(times), '.b', markersize=1)
+        plt.savefig(f"raster_layer_{layer}_channel_{channel:03d}.png", dpi=150)
         plt.close(fig)
 
 
         if len(voltages):
             fig, ax = plt.subplots(1, 1)
-            ax.plot(voltages[0])
+            plt.suptitle(f"voltages {layer}, {channel}")
+            ax.plot(voltages[0], linewidth=0.1)
             plt.savefig(f"voltages_layer_{layer}_channel_{channel:03d}.png", dpi=150)
 
     # print(spikes)
