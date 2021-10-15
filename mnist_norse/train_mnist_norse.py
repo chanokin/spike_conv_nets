@@ -41,13 +41,13 @@ def pick_gpu():
     raise RuntimeError("No GPUs available.")
 
 
-epochs = 10
+epochs = 20
 batch_size = 32
 seq_length = 200  # time steps
-learning_rate = 2e-3
+learning_rate = 2e-1#3
 act_model = 'super'
 optimizer = 'adam'
-random_seed = 1374
+random_seed = 1337
 device = 'cpu' if bool(0) else 'cuda'
 
 torch.manual_seed(random_seed)
@@ -68,7 +68,7 @@ data_transform = torchvision.transforms.Compose(
 )
 
 total_train_size = 60000
-train_size = 6000
+train_size = 6#00#00
 train_loader = torch.utils.data.DataLoader(
     torch.utils.data.random_split(
         torchvision.datasets.MNIST(
@@ -85,7 +85,7 @@ train_loader = torch.utils.data.DataLoader(
 )
 
 total_test_size = 10000
-test_size = 1000
+test_size = 10000
 test_loader = torch.utils.data.DataLoader(
     torch.utils.data.random_split(
         torchvision.datasets.MNIST(
@@ -108,13 +108,15 @@ model = LIFConvNet(
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 checkpoint_callback = ModelCheckpoint(
     monitor='val_loss',
-    dirpath='./checkpoints',
+    dirpath='checkpoints',
     filename='sample-mnist-{epoch:02d}-{val_loss:.2f}'
 )
 # pl.Trainer.from_argparse_args()
 trainer = pl.Trainer(gpus=[0],
                      max_epochs=epochs,
-                     callbacks=[checkpoint_callback])
+                    #  callbacks=[checkpoint_callback],
+                     fast_dev_run=True
+                    )
 trainer.fit(model, train_loader)
 
 set_parameter_buffers(model)
