@@ -1,3 +1,11 @@
+**/*.yaml
+**/*.txt
+**/*.pt
+**/*.ckpt
+**/events.*.0
+**/lightning_logs/
+**/MNIST/
+
 # Byte-compiled / optimized / DLL files
 reports/
 __pycache__/
@@ -139,3 +147,4 @@ dmypy.json
 
 **/*_CODE/
 **/*.egg-info/
+
