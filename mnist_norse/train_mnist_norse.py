@@ -43,8 +43,8 @@ def pick_gpu():
 
 epochs = 20
 batch_size = 32
-seq_length = 200  # time steps
-learning_rate = 2e-1#3
+seq_length = 100  # time steps
+learning_rate = 2e-3
 act_model = 'super'
 optimizer = 'adam'
 random_seed = 1337
@@ -68,7 +68,7 @@ data_transform = torchvision.transforms.Compose(
 )
 
 total_train_size = 60000
-train_size = 6#00#00
+train_size = 60000
 train_loader = torch.utils.data.DataLoader(
     torch.utils.data.random_split(
         torchvision.datasets.MNIST(
@@ -115,7 +115,7 @@ checkpoint_callback = ModelCheckpoint(
 trainer = pl.Trainer(gpus=[0],
                      max_epochs=epochs,
                     #  callbacks=[checkpoint_callback],
-                     fast_dev_run=True
+                    #  fast_dev_run=True
                     )
 trainer.fit(model, train_loader)
 
