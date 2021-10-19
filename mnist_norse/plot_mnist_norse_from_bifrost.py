@@ -38,7 +38,10 @@ for layer in recs:
         voltages = recs[layer][channel].segments[0].filter(name='v')
 
         images = plotting.spikes_to_images(spikes, shape, run_time, period)
-        if 'dense' in layer:
+        max_sh = np.max(shape)
+        prod_sh = np.prod(shape)
+
+        if max_sh == prod_sh:
             size = int(np.prod(shape))
             rows = int(np.round(np.sqrt(size)))
             cols = size // rows + int(size % rows > 0)
