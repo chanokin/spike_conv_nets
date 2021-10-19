@@ -66,7 +66,7 @@ config = {
     # 'runtime': 0.0,
     'split_runs': True,
     'configuration': {
-        SUPPORTED_CONFIGS.MAX_NEURONS_PER_COMPUTE_UNIT: [('IF_curr_alpha', (32, 16))],
+        SUPPORTED_CONFIGS.MAX_NEURONS_PER_COMPUTE_UNIT: [('IF_curr_exp', (32, 16))],
     },
 }
 
@@ -75,7 +75,7 @@ bf_input = InputLayer("in", in_size, 1, source=source)
 bf_net, bf_context, bf_net_dict = parser(model, bf_input, config=config)
 
 record = {
-    'spikes': [0, 1, 2, 3, 4],
+    'spikes': [0, 1, 2, 3, 4, 5],
     # 'spikes': [-1],
     # 'v': [1]
 }
