@@ -15,7 +15,7 @@ def to_dict(np_file):
 _colors = ['red', 'green', 'blue', 'cyan', 'orange',
            'magenta', 'black', 'yellow', ]
 
-input_filename = "./Bifrost_Network_recordings.npz"
+input_filename = "Bifrost_Network_recordings.npz"
 np_data = np.load(input_filename, allow_pickle=True)
 data_dict = to_dict(np_data)
 
@@ -29,12 +29,19 @@ classes = in_cfg['target_classes']
 period = on_time + off_time
 run_time = period * n_samples
 for layer in recs:
+
     shape = shapes[layer]
 
     for channel in recs[layer]:
+        print(layer, channel)
         spikes = recs[layer][channel].segments[0].spiketrains
+        voltages = recs[layer][channel].segments[0].filter(name='v')
+
         images = plotting.spikes_to_images(spikes, shape, run_time, period)
-        if 'dense' in layer:
+        max_sh = np.max(shape)
+        prod_sh = np.prod(shape)
+
+        if max_sh == prod_sh:
             size = int(np.prod(shape))
             rows = int(np.round(np.sqrt(size)))
             cols = size // rows + int(size % rows > 0)
@@ -46,12 +53,32 @@ for layer in recs:
         fig, axs = plt.subplots(1, n_samples, sharey=True)
         plt.suptitle(f"{layer}, {channel}")
         for i, img in enumerate(images[0]):
-            axs[i].set_title(classes[i])
+            if n_samples == 1:
+                axs.set_title(classes[i])
+            else:
+                axs[i].set_title(classes[i])
             new_image = np.zeros(new_size)
             new_image[:img.size] = img.flatten()
-            axs[i].imshow(new_image.reshape(new_shape))
+            if n_samples == 1:
+                axs.imshow(new_image.reshape(new_shape))
+            else:
+                axs[i].imshow(new_image.reshape(new_shape))
             # axs[i].imshow(img)
         plt.savefig(f"images_layer_{layer}_channel_{channel:03d}.png", dpi=150)
         plt.close(fig)
+
+        fig, ax = plt.subplots(1, 1)
+        plt.suptitle(f"raster {layer}, {channel}")
+        for neuron_idx, times in enumerate(spikes):
+            ax.plot(times, neuron_idx * np.ones_like(times), '.b', markersize=1)
+        plt.savefig(f"raster_layer_{layer}_channel_{channel:03d}.png", dpi=150)
+        plt.close(fig)
+
+
+        if len(voltages):
+            fig, ax = plt.subplots(1, 1)
+            plt.suptitle(f"voltages {layer}, {channel}")
+            ax.plot(voltages[0], linewidth=0.1)
+            plt.savefig(f"voltages_layer_{layer}_channel_{channel:03d}.png", dpi=150)
 
     # print(spikes)
