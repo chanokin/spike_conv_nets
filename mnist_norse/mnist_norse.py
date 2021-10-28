@@ -19,7 +19,7 @@ class LIFConvNet(pl.LightningModule):
         super(LIFConvNet, self).__init__()
         self.optimizer = optimizer
         self.learning_rate = learning_rate
-        self.input_encoder = PoissonEncoder(seq_length=seq_length, f_max=100)
+        self.input_encoder = PoissonEncoder(seq_length=seq_length, f_max=200)
         self.only_first_spike = only_first_spike
         self.input_features = input_features
         bias = True
