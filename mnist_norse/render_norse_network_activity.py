@@ -99,7 +99,7 @@ keys = list(activations.keys())
 input = activations[keys[0]]
 n_cols = 5
 n_rows = batch_size // n_cols + int(batch_size % n_cols > 0)
-figsize = np.array([n_cols, n_rows]) * 5.
+figsize = np.array([n_cols, n_rows]) * 7.
 n_imgs = n_rows * n_cols
 n_steps_per_image = seq_length // n_imgs
 in_shape = (28, 28)
@@ -112,11 +112,13 @@ for layer_idx_e, (layer_name, all_activation) in enumerate(activations.items()):
     layer_idx += 1
 
     old_shape = all_activation.shape
+    do_img_reshape = False
     if 'input' in layer_name:
         new_shape = (seq_length, batch_size, 1, *in_shape)
     elif len(old_shape) > 2:
         new_shape = (seq_length, batch_size, old_shape[-3], old_shape[-2], old_shape[-1])
     else:
+        do_img_reshape = True
         new_shape = (seq_length, batch_size, 1, 1, old_shape[-1])
 
     # shape = (n_steps, n_input_images, n_channels, width, height)
@@ -139,12 +141,22 @@ for layer_idx_e, (layer_name, all_activation) in enumerate(activations.items()):
                 ax = axes[ax_row, ax_col]
             else:
                 ax = axes
-            img = batch_acts.sum(axis=0)
+
+            img = batch_acts.sum(axis=0).detach().numpy().copy()
+
+            if do_img_reshape:
+                img_size = img.size
+                img_rows = int(np.sqrt(img_size))
+                img_cols = img_size // img_rows + int(img_size % img_rows > 0)
+                new_img = np.zeros(img_cols * img_rows)
+                new_img[:img_size] = img
+                img = new_img.reshape((img_rows, img_cols))
+
             mn = img[img > 0].mean()
             st = img[img > 0].std()
             # ax.set_title(f"mean {mn:2.6f}  std {st:2.6f}")
             ax.set_title(f"{targets[batch_idx]}")
-            im = ax.imshow(img.detach().numpy().copy())
+            im = ax.imshow(img)
             divider = make_axes_locatable(ax)
             cax = divider.append_axes('right', size='5%', pad=0.05)
             fig.colorbar(im, cax=cax, orientation='vertical')
