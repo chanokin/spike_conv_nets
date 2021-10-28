@@ -63,7 +63,8 @@ device = torch.device(device)
 data_transform = torchvision.transforms.Compose(
     [
         torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize((0.1307,), (0.3081,)),
+        # torchvision.transforms.Normalize((0.1307,), (0.3081,)),
+        torchvision.transforms.Normalize((0.,), (1.,)),
     ]
 )
 
