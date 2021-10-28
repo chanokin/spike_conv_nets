@@ -19,7 +19,7 @@ class LIFConvNet(pl.LightningModule):
         super(LIFConvNet, self).__init__()
         self.optimizer = optimizer
         self.learning_rate = learning_rate
-        self.input_encoder = PoissonEncoder(seq_length=seq_length, f_max=1000)
+        self.input_encoder = PoissonEncoder(seq_length=seq_length, f_max=100)
         self.only_first_spike = only_first_spike
         self.input_features = input_features
         bias = True
@@ -66,7 +66,7 @@ class LIFConvNet(pl.LightningModule):
     def forward(self, x):
         batch_size = x.shape[0]
         seq_length = self.seq_length
-        x = self.input_encoder(x.view(-1, self.input_features))
+        x = self.input_encoder( x.view((-1, self.input_features)) )
         x = x.reshape(seq_length, batch_size, 1, 28, 28)
 
         s1 = None
