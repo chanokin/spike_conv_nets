@@ -16,7 +16,7 @@ seq_length = 100  # time steps
 learning_rate = 2e-3
 act_model = 'super'
 device = 'cpu' if bool(1) else 'cuda'
-batch_size = 8
+batch_size = 5
 
 
 torch.manual_seed(random_seed)
@@ -97,30 +97,58 @@ for k,v in activations.items():
 
 keys = list(activations.keys())
 input = activations[keys[0]]
-n_cols = 1
-n_rows = 1
+n_cols = 5
+n_rows = batch_size // n_cols + int(batch_size % n_cols > 0)
+figsize = np.array([n_cols, n_rows]) * 5.
 n_imgs = n_rows * n_cols
 n_steps_per_image = seq_length // n_imgs
-for i in range(batch_size):
-    inn = input[:, i].reshape((-1, 28, 28))
-    fig, axes = plt.subplots(n_rows, n_cols)
-    if isinstance(axes, np.ndarray):
-        axes = axes.reshape((n_rows, n_cols))
-    for ax_row in range(n_rows):
-        for ax_col in range(n_cols):
-            img_idx = (ax_row * n_cols + ax_col)
-            start_idx = img_idx * n_steps_per_image
-            end_idx = min(start_idx + n_steps_per_image, seq_length)
+in_shape = (28, 28)
+layer_idx = 0
+for layer_idx_e, (layer_name, all_activation) in enumerate(activations.items()):
+
+    if not ('lif' in layer_name or 'input' in layer_name):
+        continue
+
+    layer_idx += 1
+
+    old_shape = all_activation.shape
+    if 'input' in layer_name:
+        new_shape = (seq_length, batch_size, 1, *in_shape)
+    elif len(old_shape) > 2:
+        new_shape = (seq_length, batch_size, old_shape[-3], old_shape[-2], old_shape[-1])
+    else:
+        new_shape = (seq_length, batch_size, 1, 1, old_shape[-1])
+
+    # shape = (n_steps, n_input_images, n_channels, width, height)
+    all_activation = all_activation.reshape(new_shape)
+    n_channels = new_shape[2]
+    for channel in range(n_channels):
+
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize)
+        plt.suptitle(f"{layer_idx:3d} {layer_name}, ch {channel}")
+        if isinstance(axes, np.ndarray):
+            axes = axes.reshape((n_rows, n_cols))
+
+        for batch_idx in range(batch_size):
+            batch_acts = all_activation[:, batch_idx, channel]
+
+            ax_row = batch_idx // n_cols
+            ax_col = batch_idx % n_cols
+
             if isinstance(axes, np.ndarray):
                 ax = axes[ax_row, ax_col]
             else:
                 ax = axes
-            img = inn[start_idx:end_idx].sum(axis=0)
+            img = batch_acts.sum(axis=0)
             mn = img[img > 0].mean()
             st = img[img > 0].std()
-            ax.set_title(f"mean {mn:2.6f}  std {st:2.6f}")
-            im = ax.imshow(img)
+            # ax.set_title(f"mean {mn:2.6f}  std {st:2.6f}")
+            ax.set_title(f"{targets[batch_idx]}")
+            im = ax.imshow(img.detach().numpy().copy())
             divider = make_axes_locatable(ax)
             cax = divider.append_axes('right', size='5%', pad=0.05)
             fig.colorbar(im, cax=cax, orientation='vertical')
-    plt.show()
+
+        plt.savefig(f"activation_of_{layer_idx:03d}_{layer_name}_channel_{channel:03d}.png", dpi=100)
+        plt.close(fig)
+        # plt.show()
