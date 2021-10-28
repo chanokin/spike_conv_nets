@@ -89,7 +89,7 @@ activations = {name: torch.cat(outputs, 0) for name, outputs in activations.item
 
 # just print out the sizes of the saved activations as a sanity check
 for k,v in activations.items():
-    print (k, v.size())
+    print (k, v.size(), v.mean(), v.std())
 
 keys = list(activations.keys())
 input = activations[keys[0]]
