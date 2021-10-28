@@ -59,6 +59,10 @@ model = LIFConvNet(
     model=act_model,
 ).to(device)
 
+filename = 'mnist-final-50.pt'
+checkpoint = torch.load(filename,
+                        map_location=torch.device('cpu'))
+model.load_state_dict(checkpoint['state_dict'], strict=False)
 
 # a dictionary that keeps saving the activations as they come
 activations = collections.defaultdict(list)
