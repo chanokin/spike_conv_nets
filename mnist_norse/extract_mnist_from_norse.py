@@ -26,7 +26,7 @@ tab = " " * 4
 parser, saver = get_parser_and_saver(model)
 in_shape = [28, 28]
 in_size = int(np.prod(in_shape))
-n_samples = 1
+n_samples = 5
 load_mnist_images = f"\n{tab}".join([
     # f'def _load_mnist(start_sample, num_samples, num_channels):',
     f'{tab}X, y = fetch_openml("mnist_784", version=1, return_X_y=True, as_frame=False)',
