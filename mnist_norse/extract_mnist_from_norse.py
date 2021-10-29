@@ -77,7 +77,7 @@ bf_net, bf_context, bf_net_dict = parser(model, bf_input, config=config)
 record = {
     'spikes': [0, 1, 2, 3, 4, 5],
     # 'spikes': [-1],
-    # 'v': [1]
+    'v': [-1]
 }
 set_recordings(bf_net, record)
 # np.savez_compressed('ml_genn_as_spynn_net_dict.npz', **net_params)
