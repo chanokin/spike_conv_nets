@@ -59,7 +59,7 @@ model = LIFConvNet(
     model=act_model,
 ).to(device)
 
-filename = 'mnist-final-50.pt'
+filename = 'mnist-final-20-poisson.pt'
 checkpoint = torch.load(filename,
                         map_location=torch.device('cpu'))
 model.load_state_dict(checkpoint['state_dict'], strict=False)
@@ -127,7 +127,7 @@ for layer_idx_e, (layer_name, all_activation) in enumerate(activations.items()):
     for channel in range(n_channels):
 
         fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize)
-        plt.suptitle(f"{layer_idx:3d} {layer_name}, ch {channel}")
+        plt.suptitle(f"norse {layer_idx:3d} {layer_name}, ch {channel}")
         if isinstance(axes, np.ndarray):
             axes = axes.reshape((n_rows, n_cols))
 

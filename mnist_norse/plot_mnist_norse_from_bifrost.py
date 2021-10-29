@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import plotting
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 def to_dict(np_file):
@@ -28,7 +29,7 @@ off_time = in_cfg['off_time_ms']
 classes = in_cfg['target_classes']
 period = on_time + off_time
 run_time = period * n_samples
-for layer in recs:
+for layer_idx, layer in enumerate(recs):
 
     shape = shapes[layer]
 
@@ -50,28 +51,28 @@ for layer in recs:
             new_shape = shape
 
         new_size = int(np.prod(new_shape))
-        fig, axs = plt.subplots(1, n_samples, sharey=True)
-        plt.suptitle(f"{layer}, {channel}")
+        n_rows = 1
+        figsize = np.array([n_samples, n_rows]) * 5.
+        fig, axs = plt.subplots(n_rows, n_samples, sharey=True, figsize=figsize)
+        plt.suptitle(f"spynn {layer}, {channel}")
         for i, img in enumerate(images[0]):
-            if n_samples == 1:
-                axs.set_title(classes[i])
-            else:
-                axs[i].set_title(classes[i])
+            ax = axs if n_samples == 1 else axs[i]
+            ax.set_title(classes[i])
             new_image = np.zeros(new_size)
             new_image[:img.size] = img.flatten()
-            if n_samples == 1:
-                axs.imshow(new_image.reshape(new_shape))
-            else:
-                axs[i].imshow(new_image.reshape(new_shape))
-            # axs[i].imshow(img)
-        plt.savefig(f"images_layer_{layer}_channel_{channel:03d}.png", dpi=150)
+            im = ax.imshow(new_image.reshape(new_shape))
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes('right', size='5%', pad=0.05)
+            fig.colorbar(im, cax=cax, orientation='vertical')
+
+        plt.savefig(f"images_layer_{layer_idx:03d}_{layer}_channel_{channel:03d}.png", dpi=150)
         plt.close(fig)
 
         fig, ax = plt.subplots(1, 1)
         plt.suptitle(f"raster {layer}, {channel}")
         for neuron_idx, times in enumerate(spikes):
             ax.plot(times, neuron_idx * np.ones_like(times), '.b', markersize=1)
-        plt.savefig(f"raster_layer_{layer}_channel_{channel:03d}.png", dpi=150)
+        plt.savefig(f"raster_layer_{layer_idx:03d}_{layer}_channel_{channel:03d}.png", dpi=150)
         plt.close(fig)
 
 
@@ -79,6 +80,6 @@ for layer in recs:
             fig, ax = plt.subplots(1, 1)
             plt.suptitle(f"voltages {layer}, {channel}")
             ax.plot(voltages[0], linewidth=0.1)
-            plt.savefig(f"voltages_layer_{layer}_channel_{channel:03d}.png", dpi=150)
+            plt.savefig(f"voltages_layer_{layer_idx:03d}_{layer}_channel_{channel:03d}.png", dpi=150)
 
     # print(spikes)
