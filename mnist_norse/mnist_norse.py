@@ -57,7 +57,11 @@ class LIFConvNet(pl.LightningModule):
         )
 
         self.dense3 = torch.nn.Linear(64, 10, bias=bias)
-        self.lif5 = LICell(p=LIParameters(),)
+        # self.lif5 = LICell(p=LIParameters(),)
+        self.lif5 = LIFCell(
+            p=LIFParameters(method=model, alpha=1.0,
+                            v_th=torch.as_tensor(threshold)),
+        )
 
         self.seq_length = seq_length
         self.input_scale = input_scale
@@ -110,7 +114,7 @@ class LIFConvNet(pl.LightningModule):
 
             z = self.dense3(z)
             # print(f"dense3 = {z.mean()}")
-            z = torch.nn.functional.relu(z)
+            # z = torch.nn.functional.relu(z)
             z, s5 = self.lif5(z, s5)
             # print(f"lif5 = {z.mean()}")
 
@@ -118,10 +122,11 @@ class LIFConvNet(pl.LightningModule):
 
         # return voltages
         # self.voltages = torch.stack(output)
+        out_spikes = torch.stack(output)
+        spike_sum = torch.sum(out_spikes, dim=0)
 
-        m, _ = torch.max(torch.stack(output), 0)
-        log_p_y = torch.nn.functional.log_softmax(m, dim=1)
-
+        # m, _ = torch.max(spike_sum)
+        log_p_y = torch.nn.functional.log_softmax(spike_sum, dim=1)
         return log_p_y
 
     def training_step(self, batch, batch_idx):
