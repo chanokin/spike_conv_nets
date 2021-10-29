@@ -10,7 +10,7 @@ from bifrost.extract.torch.parameter_buffers import set_parameter_buffers
 
 
 model = NorseModel(28*28, 1)
-filename = 'mnist-final-50.pt'
+filename = 'mnist-final-20-poisson.pt'
 checkpoint = torch.load(filename,
                         map_location=torch.device('cpu'))
 model.load_state_dict(checkpoint['state_dict'], strict=False)
@@ -32,7 +32,7 @@ load_mnist_images = f"\n{tab}".join([
     f'{tab}X, y = fetch_openml("mnist_784", version=1, return_X_y=True, as_frame=False)',
     f'X = X.reshape((X.shape[0], -1))',
     f'X_train, X_test, y_train, y_test = train_test_split(',
-    f'{tab}X, y, train_size=5000,',
+    f'{tab}X, y, train_size=60000,',
     f'{tab}test_size=10000, shuffle=False)',
     f'X_test = (X_test[start_sample: start_sample + num_samples].T)',
     f'y_test = y_test[start_sample: start_sample + num_samples]',
