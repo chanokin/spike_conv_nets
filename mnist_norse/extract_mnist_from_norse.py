@@ -10,7 +10,7 @@ from bifrost.extract.torch.parameter_buffers import set_parameter_buffers
 
 
 model = NorseModel(28*28, 1)
-filename = 'mnist-final-20-poisson.pt'
+filename = 'mnist-final-50-poisson.pt'
 checkpoint = torch.load(filename,
                         map_location=torch.device('cpu'))
 model.load_state_dict(checkpoint['state_dict'], strict=False)

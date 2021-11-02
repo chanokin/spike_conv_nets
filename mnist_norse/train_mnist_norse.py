@@ -41,21 +41,22 @@ def pick_gpu():
     raise RuntimeError("No GPUs available.")
 
 
-epochs = 20
+epochs = 100
 batch_size = 32
-seq_length = 100  # time steps
-learning_rate = 2e-3
+n_dataset_workers = 8
+seq_length = 200  # time steps
+learning_rate = 2e-4
 act_model = 'super'
 optimizer = 'adam'
 random_seed = 1337
-device = 'cpu' if bool(1) else 'cuda'
+device = 'cpu' if bool(0) else 'cuda'
 
 torch.manual_seed(random_seed)
 np.random.seed(random_seed)
-# if torch.cuda.is_available():
-#     torch.cuda.manual_seed(random_seed)
-#     torch.backends.cudnn.enabled = True
-#     torch.backends.cudnn.benchmark = True
+if torch.cuda.is_available():
+    torch.cuda.manual_seed(random_seed)
+    torch.backends.cudnn.enabled = True
+    torch.backends.cudnn.benchmark = True
 
 device = torch.device(device)
 
@@ -82,7 +83,7 @@ train_loader = torch.utils.data.DataLoader(
     )[0],
     batch_size=batch_size,
     shuffle=True,
-    num_workers=16,
+    num_workers=n_dataset_workers,
 )
 
 total_test_size = 10000
@@ -113,7 +114,7 @@ checkpoint_callback = ModelCheckpoint(
     filename='sample-mnist-{epoch:02d}-{val_loss:.2f}'
 )
 # pl.Trainer.from_argparse_args()
-trainer = pl.Trainer(#gpus=[0],
+trainer = pl.Trainer(gpus=[0],
                      max_epochs=epochs,
                     #  callbacks=[checkpoint_callback],
                     #  fast_dev_run=True

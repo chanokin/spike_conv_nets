@@ -124,15 +124,19 @@ class LIFConvNet(pl.LightningModule):
         # self.voltages = torch.stack(output)
         out_spikes = torch.stack(output)
         spike_sum = torch.sum(out_spikes, dim=0)
-
+        return spike_sum
         # m, _ = torch.max(spike_sum)
-        log_p_y = torch.nn.functional.log_softmax(spike_sum, dim=1)
-        return log_p_y
+        # log_p_y = torch.nn.functional.log_softmax(spike_sum, dim=1)
+        # return log_p_y
 
     def training_step(self, batch, batch_idx):
         x, y = batch
         out = self(x)
-        loss = torch.nn.functional.nll_loss(out, y)
+        log_p_y = torch.nn.functional.log_softmax(out, dim=1)
+        loss = torch.nn.functional.nll_loss(log_p_y, y)
+        # punish too much activity in the output
+        loss += torch.mean(out) * 0.01
+
 
         correct = out.argmax(dim=1).eq(y).sum().item()
         total = len(y)
