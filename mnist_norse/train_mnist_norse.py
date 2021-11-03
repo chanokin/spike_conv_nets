@@ -53,12 +53,15 @@ device = 'cpu' if bool(0) else 'cuda'
 
 torch.manual_seed(random_seed)
 np.random.seed(random_seed)
-if torch.cuda.is_available():
-    torch.cuda.manual_seed(random_seed)
-    torch.backends.cudnn.enabled = True
-    torch.backends.cudnn.benchmark = True
+gpus = None
+if device == 'cuda':
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(random_seed)
+        torch.backends.cudnn.enabled = True
+        torch.backends.cudnn.benchmark = True
 
-device = torch.device(device)
+    gpus = [0]
+    device = torch.device(device)
 
 # First we create and transform the dataset
 data_transform = torchvision.transforms.Compose(
@@ -114,7 +117,7 @@ checkpoint_callback = ModelCheckpoint(
     filename='sample-mnist-{epoch:02d}-{val_loss:.2f}'
 )
 # pl.Trainer.from_argparse_args()
-trainer = pl.Trainer(gpus=[0],
+trainer = pl.Trainer(gpus=gpus,
                      max_epochs=epochs,
                     #  callbacks=[checkpoint_callback],
                     #  fast_dev_run=True
