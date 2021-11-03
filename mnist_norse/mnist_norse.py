@@ -151,22 +151,22 @@ class LIFConvNet(pl.LightningModule):
         log_p_y = torch.nn.functional.log_softmax(out, dim=1)
         loss = torch.nn.functional.nll_loss(log_p_y, y)
 
-        print()
+        # print()
 
         # punish too much activity in the output
         net_spikes = self.all_spike_counts
         # print(f"spike_shapes = {[s.shape for s in net_spikes]}\n")
         net_spike_averages = torch.stack([torch.mean(s) for s in net_spikes])
         average_spiking = torch.sum(net_spike_averages)
-        print(f"average_spiking = {average_spiking}\n")
+        # print(f"average_spiking = {average_spiking}\n")
 
         # print(f"all_weight_means = {self.all_weight_means}\n")
         average_weights = torch.sum(torch.stack(self.all_weight_means))
-        print(f"average_weights = {average_weights}\n")
+        # print(f"average_weights = {average_weights}\n")
 
         # print(net_spike_averages)
         activity_loss = average_spiking * average_weights * 0.01
-        print(f"activity_loss = {activity_loss}")
+        # print(f"activity_loss = {activity_loss}")
 
         loss += activity_loss
 
