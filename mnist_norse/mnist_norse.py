@@ -57,11 +57,11 @@ class LIFConvNet(pl.LightningModule):
         )
 
         self.dense3 = torch.nn.Linear(64, 10, bias=bias)
-        # self.lif5 = LICell(p=LIParameters(),)
-        self.lif5 = LIFCell(
-            p=LIFParameters(method=model, alpha=1.0,
-                            v_th=torch.as_tensor(threshold)),
-        )
+        self.lif5 = LICell(p=LIParameters(),)
+#        self.lif5 = LIFCell(
+#            p=LIFParameters(method=model, alpha=1.0,
+#                            v_th=torch.as_tensor(threshold)),
+#        )
 
         self.seq_length = seq_length
         self.input_scale = input_scale
@@ -135,13 +135,14 @@ class LIFConvNet(pl.LightningModule):
             output.append(z)#.detach())
 
         # return voltages
-        # self.voltages = torch.stack(output)
-        self.all_spike_counts = [torch.sum(s, dim=0) for s in all_spikes]
-        self.all_weight_means = [torch.mean(torch.abs(w)) for w in all_weights]
-        out_spikes = torch.stack(output)
-        spike_sum = torch.sum(out_spikes, dim=0)
-        return spike_sum
-        # m, _ = torch.max(spike_sum)
+        self.voltages = torch.stack(output)
+        #self.all_spike_counts = [torch.sum(s, dim=0) for s in all_spikes]
+        #self.all_weight_means = [torch.mean(torch.abs(w)) for w in all_weights]
+        #out_spikes = torch.stack(output)
+        #spike_sum = torch.sum(out_spikes, dim=0)
+        #return spike_sum
+        m, _ = torch.max(self.voltages, dim=0)
+        return m
         # log_p_y = torch.nn.functional.log_softmax(spike_sum, dim=1)
         # return log_p_y
 
@@ -154,22 +155,21 @@ class LIFConvNet(pl.LightningModule):
         # print()
 
         # punish too much activity in the output
-        net_spikes = self.all_spike_counts
+        #net_spikes = self.all_spike_counts
         # print(f"spike_shapes = {[s.shape for s in net_spikes]}\n")
-        net_spike_averages = torch.stack([torch.mean(s) for s in net_spikes])
-        average_spiking = torch.sum(net_spike_averages)
+        #net_spike_averages = torch.stack([torch.mean(s) for s in net_spikes])
+        #average_spiking = torch.mean(net_spike_averages)
         # print(f"average_spiking = {average_spiking}\n")
 
         # print(f"all_weight_means = {self.all_weight_means}\n")
-        average_weights = torch.sum(torch.stack(self.all_weight_means))
+        #average_weights = torch.mean(torch.stack(self.all_weight_means))
         # print(f"average_weights = {average_weights}\n")
 
         # print(net_spike_averages)
-        activity_loss = average_spiking * average_weights * 0.01
+        #activity_loss = average_spiking * 0.001
         # print(f"activity_loss = {activity_loss}")
 
-        loss += activity_loss
-
+        #loss += activity_loss
 
         correct = out.argmax(dim=1).eq(y).sum().item()
         total = len(y)
