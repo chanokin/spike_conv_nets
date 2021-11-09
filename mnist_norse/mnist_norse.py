@@ -108,7 +108,8 @@ class LIFConvNet(pl.LightningModule):
             # print(f"pool2 = {z.mean()}")
 
             # flatten
-            z = z.view(batch_size, -1)
+            # z = z.view(batch_size, -1)
+            z = torch.flatten(z)
 
             z = self.dense1(z)
             all_weights.append(self.dense1.weight.detach())
