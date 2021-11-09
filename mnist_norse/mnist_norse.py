@@ -109,7 +109,9 @@ class LIFConvNet(pl.LightningModule):
 
             # flatten
             # z = z.view(batch_size, -1)
-            z = torch.flatten(z)
+            # print(z.shape)
+            z = torch.flatten(z, start_dim=1)
+            # print(z.shape)
 
             z = self.dense1(z)
             all_weights.append(self.dense1.weight.detach())
@@ -142,7 +144,9 @@ class LIFConvNet(pl.LightningModule):
         #out_spikes = torch.stack(output)
         #spike_sum = torch.sum(out_spikes, dim=0)
         #return spike_sum
+        # print(self.voltages.shape)
         m, _ = torch.max(self.voltages, dim=0)
+        # print(m.shape)
         return m
         # log_p_y = torch.nn.functional.log_softmax(spike_sum, dim=1)
         # return log_p_y
