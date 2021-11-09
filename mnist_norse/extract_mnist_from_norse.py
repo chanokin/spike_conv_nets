@@ -10,7 +10,8 @@ from bifrost.extract.torch.parameter_buffers import set_parameter_buffers
 
 
 model = NorseModel(28*28, 1)
-filename = 'mnist-final-100-poisson.pt'
+# filename = 'mnist-final-100-poisson.pt'
+filename = 'mnist-final-50-poisson-volt_out.pt'
 checkpoint = torch.load(filename,
                         map_location=torch.device('cpu'))
 model.load_state_dict(checkpoint['state_dict'], strict=False)
@@ -75,7 +76,7 @@ bf_input = InputLayer("in", in_size, 1, source=source)
 bf_net, bf_context, bf_net_dict = parser(model, bf_input, config=config)
 
 record = {
-    'spikes': [0, 1, 2, 3, 4, 5],
+    'spikes': [0, 1, 2, 3, 4,],
     # 'spikes': [-1],
     'v': [-1]
 }
