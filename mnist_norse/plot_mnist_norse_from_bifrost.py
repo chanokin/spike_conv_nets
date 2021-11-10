@@ -77,6 +77,12 @@ for layer_idx, layer in enumerate(recs):
 
 
         if len(voltages):
+            fig, ax = plt.subplots(1, 1)
+            plt.suptitle(f"spynn {layer}, {channel} volts")
+            ax.plot(voltages[0])
+            plt.savefig(f"voltages_layer_{layer_idx:03d}_{layer}_channel_{channel:03d}.png", dpi=150)
+            plt.close(fig)
+
             fig, axs = plt.subplots(n_rows, n_samples, sharey=True, figsize=figsize)
             plt.suptitle(f"spynn {layer}, {channel}")
             for v_idx, stt in enumerate(np.arange(0, n_samples * period, period)):
@@ -92,6 +98,6 @@ for layer_idx, layer in enumerate(recs):
                 cax = divider.append_axes('right', size='5%', pad=0.05)
                 fig.colorbar(im, cax=cax, orientation='vertical')
 
-            plt.savefig(f"voltages_layer_{layer_idx:03d}_{layer}_channel_{channel:03d}.png", dpi=150)
-
+            plt.savefig(f"voltages_sum_layer_{layer_idx:03d}_{layer}_channel_{channel:03d}.png", dpi=150)
+            plt.close(fig)
     # print(spikes)
