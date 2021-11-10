@@ -68,12 +68,12 @@ for layer_idx, layer in enumerate(recs):
         plt.savefig(f"images_layer_{layer_idx:03d}_{layer}_channel_{channel:03d}.png", dpi=150)
         plt.close(fig)
 
-        # fig, ax = plt.subplots(1, 1)
-        # plt.suptitle(f"raster {layer}, {channel}")
-        # for neuron_idx, times in enumerate(spikes):
-        #     ax.plot(times, neuron_idx * np.ones_like(times), '.b', markersize=1)
-        # plt.savefig(f"raster_layer_{layer_idx:03d}_{layer}_channel_{channel:03d}.png", dpi=150)
-        # plt.close(fig)
+        fig, ax = plt.subplots(1, 1)
+        plt.suptitle(f"raster {layer}, {channel}")
+        for neuron_idx, times in enumerate(spikes):
+            ax.plot(times, neuron_idx * np.ones_like(times), '.b', markersize=1)
+        plt.savefig(f"raster_layer_{layer_idx:03d}_{layer}_channel_{channel:03d}.png", dpi=150)
+        plt.close(fig)
 
 
         if len(voltages):
