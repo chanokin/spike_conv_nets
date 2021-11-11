@@ -72,15 +72,19 @@ for layer_idx, layer in enumerate(recs):
         plt.suptitle(f"raster {layer}, {channel}")
         for neuron_idx, times in enumerate(spikes):
             ax.plot(times, neuron_idx * np.ones_like(times), '.b', markersize=1)
-        plt.savefig(f"raster_layer_{layer_idx:03d}_{layer}_channel_{channel:03d}.png", dpi=150)
+        plt.savefig(f"raster_layer_{layer_idx:03d}_{layer}_channel_{channel:03d}.png", dpi=300)
         plt.close(fig)
 
 
         if len(voltages):
             fig, ax = plt.subplots(1, 1)
             plt.suptitle(f"spynn {layer}, {channel} volts")
-            ax.plot(voltages[0])
-            plt.savefig(f"voltages_layer_{layer_idx:03d}_{layer}_channel_{channel:03d}.png", dpi=150)
+            for idx, vs in enumerate(voltages[0].T):
+                ax.plot(vs, label=f"{idx}")
+            ax.set_ylabel("Membrane Potential [mV]")
+            ax.set_xlabel("Time [ms]")
+            ax.legend()
+            plt.savefig(f"voltages_layer_{layer_idx:03d}_{layer}_channel_{channel:03d}.png", dpi=300)
             plt.close(fig)
 
             fig, axs = plt.subplots(n_rows, n_samples, sharey=True, figsize=figsize)
