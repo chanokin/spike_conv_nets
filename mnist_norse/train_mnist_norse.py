@@ -41,11 +41,11 @@ def pick_gpu():
     raise RuntimeError("No GPUs available.")
 
 
-epochs = 100
+epochs = 50
 batch_size = 32
 n_dataset_workers = 8
-seq_length = 200  # time steps
-learning_rate = 2e-4
+seq_length = 100  # time steps
+learning_rate = 2e-3
 act_model = 'super'
 optimizer = 'adam'
 random_seed = 1337

@@ -10,6 +10,7 @@ from bifrost.extract.torch.parameter_buffers import set_parameter_buffers
 
 
 model = NorseModel(28*28, 1)
+# filename = 'mnist-final-100-poisson.pt'
 filename = 'mnist-final-50-poisson-volt_out.pt'
 checkpoint = torch.load(filename,
                         map_location=torch.device('cpu'))

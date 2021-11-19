@@ -32,9 +32,11 @@ run_time = period * n_samples
 for layer_idx, layer in enumerate(recs):
 
     shape = shapes[layer]
-
     for channel in recs[layer]:
         print(layer, channel)
+        n_rows = 1
+        figsize = np.array([n_samples, n_rows]) * 5.
+
         spikes = recs[layer][channel].segments[0].spiketrains
         voltages = recs[layer][channel].segments[0].filter(name='v')
 
@@ -51,8 +53,6 @@ for layer_idx, layer in enumerate(recs):
             new_shape = shape
 
         new_size = int(np.prod(new_shape))
-        n_rows = 1
-        figsize = np.array([n_samples, n_rows]) * 5.
         fig, axs = plt.subplots(n_rows, n_samples, sharey=True, figsize=figsize)
         plt.suptitle(f"spynn {layer}, {channel}")
         for i, img in enumerate(images[0]):
@@ -72,14 +72,36 @@ for layer_idx, layer in enumerate(recs):
         plt.suptitle(f"raster {layer}, {channel}")
         for neuron_idx, times in enumerate(spikes):
             ax.plot(times, neuron_idx * np.ones_like(times), '.b', markersize=1)
-        plt.savefig(f"raster_layer_{layer_idx:03d}_{layer}_channel_{channel:03d}.png", dpi=150)
+        plt.savefig(f"raster_layer_{layer_idx:03d}_{layer}_channel_{channel:03d}.png", dpi=300)
         plt.close(fig)
 
 
         if len(voltages):
             fig, ax = plt.subplots(1, 1)
-            plt.suptitle(f"voltages {layer}, {channel}")
-            ax.plot(voltages[0], linewidth=0.1)
-            plt.savefig(f"voltages_layer_{layer_idx:03d}_{layer}_channel_{channel:03d}.png", dpi=150)
+            plt.suptitle(f"spynn {layer}, {channel} volts")
+            for idx, vs in enumerate(voltages[0].T):
+                ax.plot(vs, label=f"{idx}")
+            ax.set_ylabel("Membrane Potential [mV]")
+            ax.set_xlabel("Time [ms]")
+            ax.legend()
+            plt.savefig(f"voltages_layer_{layer_idx:03d}_{layer}_channel_{channel:03d}.png", dpi=300)
+            plt.close(fig)
 
+            fig, axs = plt.subplots(n_rows, n_samples, sharey=True, figsize=figsize)
+            plt.suptitle(f"spynn {layer}, {channel}")
+            for v_idx, stt in enumerate(np.arange(0, n_samples * period, period)):
+                stt = int(stt)
+                end = stt + int(period)
+                ax = axs if n_samples == 1 else axs[v_idx]
+                vs = np.zeros(new_size)
+                vs[:voltages[0].shape[1]] = np.sum(voltages[0][stt:end,:], axis=0)
+                # ax.plot(voltages[0], linewidth=0.1)
+                im = ax.imshow(vs.reshape(new_shape))
+                ax.set_title(classes[v_idx])
+                divider = make_axes_locatable(ax)
+                cax = divider.append_axes('right', size='5%', pad=0.05)
+                fig.colorbar(im, cax=cax, orientation='vertical')
+
+            plt.savefig(f"voltages_sum_layer_{layer_idx:03d}_{layer}_channel_{channel:03d}.png", dpi=150)
+            plt.close(fig)
     # print(spikes)
