@@ -67,6 +67,9 @@ config = {
     'split_runs': True,
     'configuration': {
         SUPPORTED_CONFIGS.MAX_NEURONS_PER_COMPUTE_UNIT: [('IF_curr_exp', (32, 16))],
+        SUPPORTED_CONFIGS.MAX_NEURONS_PER_LAYER_TYPE: [
+            ('dense', (128, 1)), ('conv2d', (32, 16)),
+        ],
     },
 }
 
