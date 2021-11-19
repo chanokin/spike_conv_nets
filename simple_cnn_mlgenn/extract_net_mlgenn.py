@@ -1,10 +1,10 @@
 #import tensorflow as tf
 from bifrost.ir import (InputLayer, OutputLayer, DummyTestInputSource,
                         EthernetOutput, PoissonImageDataset)
-from tensorflow.keras import models#, layers, datasets
+from tensorflow.keras import models, layers, datasets
 from ml_genn import Model, save_model, load_model
 # from ml_genn.layers import InputType
-# from ml_genn.norm import DataNorm, SpikeNorm
+from ml_genn.converters import DataNorm, SpikeNorm
 # from ml_genn.utils import parse_arguments, raster_plot
 import numpy as np
 
@@ -26,11 +26,18 @@ def to_dict(np_file):
             d[k] = np_file[k]
     return d
 
-
+n_train_samples = 60000
+n_norm_samples = 1000
+(x_train, y_train), (x_test, y_test) = datasets.mnist.load_data()
+x_train = x_train[:n_train_samples].reshape((-1, 28, 28, 1)) / 255.0
+y_train = y_train[:n_train_samples]
+x_norm = x_train[np.random.choice(x_train.shape[0], n_norm_samples, replace=False)]
 tf_model = models.load_model('simple_cnn_tf_model.tf')
-mlg_model = Model.convert_tf_model(tf_model, input_type='poisson', 
+converter = SpikeNorm(norm_data=[x_norm], norm_time=500)
+mlg_model = Model.convert_tf_model(tf_model, input_type='poisson',
+                                   converter=converter,
                                    connectivity_type='procedural')
-mlg_model.compile(dt=1.0, batch_size=1, rng_seed=0)
+# mlg_model.compile(dt=1.0, batch_size=1, rng_seed=0)
 
 my_model = mlg_model
 

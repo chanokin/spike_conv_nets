@@ -59,7 +59,9 @@ model = LIFConvNet(
     model=act_model,
 ).to(device)
 
-filename = 'mnist-final-20-poisson.pt'
+# filename = 'mnist-final-20-poisson.pt'
+filename = 'mnist-final-50-poisson-volt_out.pt'
+
 checkpoint = torch.load(filename,
                         map_location=torch.device('cpu'))
 model.load_state_dict(checkpoint['state_dict'], strict=False)
