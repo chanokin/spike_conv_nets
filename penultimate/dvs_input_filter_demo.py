@@ -18,8 +18,8 @@ def generate_kernels(shape, w=1.0):
         k *= w
 
     def rotate(k, a):
-        rot_mat = cv2.getRotationMatrix2D(
-            tuple(np.array(k.shape[1::-1]) // 2), a, 1.0)
+        center = np.array(k.shape[1::-1]) / 2
+        rot_mat = cv2.getRotationMatrix2D(center, a, 1.0)
         return cv2.warpAffine(k, rot_mat, k.shape[1::-1],
                               flags=cv2.INTER_LINEAR)
 
@@ -40,7 +40,7 @@ def generate_kernels(shape, w=1.0):
         'vert': v,
         # 'a45': a45,
         # 'horiz': h,
-        # 'a135': a135
+        'a135': a135
     }
 
 ##################################################
@@ -70,11 +70,18 @@ for k in kernels:
 
 # sys.exit()
 
-run_time = 100.
 
 sim.setup(timestep=1.)
 
+
+print("loaded spikes")
+total_sim_time = 10000
+n_runs = 1
+run_time = total_sim_time / n_runs
+
 spike_times = [[] for _ in range(n_input)]
+start_t = 0
+end_t = run_time
 with open("spikes.txt", "r") as spk_f:
     while True:
         l = spk_f.readline()
@@ -86,12 +93,14 @@ with open("spikes.txt", "r") as spk_f:
         row = int(srow)
         col = int(scol)
         spike_t = int(stime)
-        if spike_t >= run_time:
+        if spike_t < start_t:
+            continue
+
+        if spike_t >= end_t:
             break
+
         neuron_id = row * shape[1] + col
         spike_times[neuron_id].append(spike_t)
-
-print("loaded spikes")
 
 src = sim.Population(n_input, sim.SpikeSourceArray,
                      {'spike_times': spike_times}, label='input spikes',
@@ -124,7 +133,7 @@ src.record('spikes')
 
 for k in outputs:
     outputs[k].set_max_atoms_per_core((32, 16))
-    outputs[k].record(['spikes'])
+    outputs[k].record(['spikes',])
 # syn = sim.StaticSynapse(weight=ws.flatten)
 
 
@@ -133,7 +142,35 @@ projs = {
     for k in outputs
 }
 
-sim.run(run_time)
+
+for run_idx in range(n_runs):
+    # start_t = run_idx * run_time
+    # end_t = start_t + run_time
+    # spike_times = [[] for _ in range(n_input)]
+    # with open("spikes.txt", "r") as spk_f:
+    #     while True:
+    #         l = spk_f.readline()
+    #         if l == "\n":
+    #             continue
+    #         if len(l) == 0:
+    #             break
+    #         srow, scol, schan, stime, sdv = l.split(", ")
+    #         row = int(srow)
+    #         col = int(scol)
+    #         spike_t = int(stime)
+    #         if spike_t < start_t:
+    #             continue
+    #
+    #         if spike_t >= end_t:
+    #             break
+    #
+    #         neuron_id = row * shape[1] + col
+    #         spike_times[neuron_id].append(spike_t)
+
+    # src.set(spike_times=spike_times)
+
+    sim.run(run_time)
+
 
 neos = {
     k: outputs[k].get_data()
