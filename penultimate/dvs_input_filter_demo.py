@@ -46,7 +46,9 @@ def generate_kernels(shape, w=1.0):
 ##################################################
 ###             N E W    S H A P E             ###
 ##################################################
-shape = (240, 320)  # rows, columns
+# shape = (240, 320)  # rows, columns
+# shape = (120, 160)  # rows, columns
+shape = (60, 80)  # rows, columns
 n_input = int(np.prod(shape))
 stride = np.array([1, 1], dtype='int32')  # h, w
 k_shape = np.array([5, 5], dtype='int32')
@@ -127,7 +129,7 @@ for k in outputs:
 
 
 projs = {
-    k: sim.Projection(src, outputs[k], conns[k])
+    k: sim.Projection(src, outputs[k], conns[k], sim.Convolution())
     for k in outputs
 }
 
@@ -141,12 +143,10 @@ neos['input'] = src.get_data()
 sim.end()
 
 np.savez_compressed("output_for_conv_filter_demo.npz",
-    input_name=img_name,
-    neos=neos, pix2rate=pix2rate, shape=shape,
-    flat=flat, n_input=n_input, rates=rates,
+    neos=neos, shape=shape,
+    n_input=n_input,
     stride=stride, k_shape=k_shape, kernels=kernels,
     run_time=run_time, out_shapes=out_shapes,
-    as_post=as_post
 )
 
 # import plot_conv_filter_demo
