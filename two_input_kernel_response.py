@@ -22,10 +22,10 @@ print(kernel)
 
 # sys.exit()
 
-# sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
-# sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=2048)
+# sim.IF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=1024)
+# sim.IF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=2048)
 sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=50)
-# sim.NIF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=2048)
+# sim.NIF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=2048)
 sim.NIF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=50)
 sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=50)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=1024)
@@ -46,8 +46,8 @@ src = sim.Population(n_input, sim.SpikeSourceArray,
 src1 = sim.Population(n_input, sim.SpikeSourceArray,
                       {'spike_times': spike_times}, label='input spikes 1')
 
-conn = sim.ConvolutionConnector(in_shape, kernel, strides=stride)
-conn1 = sim.ConvolutionConnector(in_shape, kernel1, strides=stride)
+conn = sim.ConvolutionOrigConnector(in_shape, kernel, strides=stride)
+conn1 = sim.ConvolutionOrigConnector(in_shape, kernel1, strides=stride)
 
 out_shape = conn.get_post_shape()
 out_size = int(np.prod(out_shape))

@@ -1,3 +1,14 @@
+**/*.png
+**/*.zip
+**/*.onnx
+**/*.yaml
+**/*.txt
+**/*.pt
+**/*.ckpt
+**/events.*.0
+**/lightning_logs/
+**/MNIST/
+
 # Byte-compiled / optimized / DLL files
 reports/
 __pycache__/
@@ -105,6 +116,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+**/.venv3/
 env/
 venv/
 ENV/
@@ -136,4 +148,6 @@ dmypy.json
 *.npz
 *.pdf
 
+**/*_CODE/
+**/*.egg-info/
 

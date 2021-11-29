@@ -44,8 +44,8 @@ def generate_kernels(shape, w=1.0):
         'a135': a135
     }
 
-img_name = 'test_img'
-# img_name = 'test_pulse'
+# img_name = 'test_img'
+img_name = 'test_pulse'
 img = cv2.imread('./{}.png'.format(img_name),
                  cv2.IMREAD_GRAYSCALE).astype('float')
 
@@ -113,8 +113,8 @@ for k in kernels:
 
 # sys.exit()
 
-# sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
-# sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=2048)
+# sim.IF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=1024)
+# sim.IF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=2048)
 # sim.SpikeSourceArray.set_model_max_atoms_per_core(n_atoms=36)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=18)
 sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=512)
@@ -137,7 +137,7 @@ else:
     src = sim.Population(n_input, sim.SpikeSourcePoisson,
                          {'rate': rates}, label='input spikes')
 
-conns = {k: sim.ConvolutionConnector(shape, kernels[k], strides=stride)
+conns = {k: sim.ConvolutionOrigConnector(shape, kernels[k], strides=stride)
          for k in kernels}
 
 as_post = {k: {r: {c: conns[k].pre_as_post(r, c)

@@ -93,7 +93,7 @@ for k in kernels:
 # if VISUALIZE:
 #     plt.show()
 
-# sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=1024)
+# sim.IF_curr_delta_conv.set_model_max_atoms_per_core(n_atoms=1024)
 sim.IF_curr_exp_conv.set_model_max_atoms_per_core(n_atoms=2048)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=1024)
 # sim.SpikeSourcePoisson.set_model_max_atoms_per_core(n_atoms=25)
@@ -114,8 +114,8 @@ else:
     src = sim.Population(n_input, sim.SpikeSourcePoisson,
                          {'rate': rates}, label='input spikes')
 
-conns = {k: sim.ConvolutionConnector(shape, kernels[k], strides=stride,
-                                     pooling=pool_area, pool_stride=pool_stride)
+conns = {k: sim.ConvolutionOrigConnector(shape, kernels[k], strides=stride,
+                                         pooling=pool_area, pool_stride=pool_stride)
          for k in kernels}
 
 as_post = {k: {r: {c: conns[k].pre_as_post(r, c)
