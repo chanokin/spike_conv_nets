@@ -5,12 +5,16 @@ import matplotlib.gridspec as gs
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import sys
 import cv2
+import os
+
+os.makedirs('spinn_out', exist_ok=True)
 
 data = np.load("output_for_conv_filter_demo.npz",
                allow_pickle=True)
 
 run_time = data['run_time']
 shape = data['shape']
+print(shape)
 
 neos = data['neos'].item()
 out_shapes = data['out_shapes'].item()
@@ -55,8 +59,9 @@ colors = {'input': 'gray', 'horiz': 'red', 'vert': 'blue',
 # plt.show()
 # sys.exit(0)
 
-in_img = np.zeros(shape)
+in_img = np.zeros(shape, dtype='uint8')
 out_imgs = {k: np.zeros(out_shapes[k], dtype='uint8') for k in out_shapes}
+out_imgs['input'] = in_img
 fade = 0.3
 cmap = 'hot'
 # cmap = 'seismic_r'
@@ -65,8 +70,8 @@ for tidx, ts in tqdm(enumerate(np.arange(0, run_time, dt))):
 
     te = ts + dt
     for i, k in enumerate(neos):
-        if k == 'input':
-            continue
+#         if k == 'input':
+#             continue
 
         s = neos[k].segments[0].spiketrains
         voltages = neos[k].segments[0].filter(name='v')
@@ -82,7 +87,13 @@ for tidx, ts in tqdm(enumerate(np.arange(0, run_time, dt))):
 
             n_spikes = len(whr[0])
             if n_spikes > 0:
-                row, col = nid // w, nid % w
+                if k == 'input':
+                    n_bits = 6
+                    row, col = nid >> n_bits, np.bitwise_and(nid, ((1 << n_bits) - 1))
+#                     row, col = nid // w, nid % w
+                    print(f"{nid}, {np.binary_repr(nid, 32)}, {row}, {col}")
+                else:
+                    row, col = nid // w, nid % w
                 out_imgs[k][row, col] = 255#min(n_spikes * 21, 255)
 
         image_fname = f"./spinn_out/{name}_{k}_sim_output_{tidx:010d}.png"

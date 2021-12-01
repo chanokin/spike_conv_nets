@@ -39,8 +39,8 @@ def generate_kernels(shape, w=1.0):
     return {
         'vert': v,
         # 'a45': a45,
-        # 'horiz': h,
-        'a135': a135
+        'horiz': h,
+#         'a135': a135
     }
 
 ##################################################
@@ -75,7 +75,7 @@ sim.setup(timestep=1.)
 
 
 print("loaded spikes")
-total_sim_time = 10000
+total_sim_time = 1000#0
 n_runs = 1
 run_time = total_sim_time / n_runs
 
@@ -89,7 +89,7 @@ with open("spikes.txt", "r") as spk_f:
             continue
         if len(l) == 0:
             break
-        srow, scol, schan, stime, sdv = l.split(", ")
+        srow, scol, schan, stime, sdv = l.replace(' ', '').split(",")
         row = int(srow)
         col = int(scol)
         spike_t = int(stime)
