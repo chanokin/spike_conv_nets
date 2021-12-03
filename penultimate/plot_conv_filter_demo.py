@@ -10,7 +10,7 @@ import os
 os.makedirs('spinn_out', exist_ok=True)
 
 data = np.load("output_for_conv_filter_demo.npz",
-               allow_pickle=True)
+               allow_pickle=True, mmap_mode='r')
 
 run_time = data['run_time']
 shape = data['shape']
