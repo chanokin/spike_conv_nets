@@ -66,9 +66,11 @@ fade = 0.3
 cmap = 'hot'
 # cmap = 'seismic_r'
 name = 'dvs_emu_input'
-for tidx, ts in tqdm(enumerate(np.arange(0, run_time, dt))):
 
+for tidx, ts in tqdm(enumerate(np.arange(0, run_time, dt))):
+    input_spike_count = 0
     te = ts + dt
+    print(ts, te)
     for i, k in enumerate(neos):
 #         if k == 'input':
 #             continue
@@ -80,21 +82,26 @@ for tidx, ts in tqdm(enumerate(np.arange(0, run_time, dt))):
         w = shp[1]
         out_imgs[k][:] = 0
         for nid, times in enumerate(s):
-            tss = ts + dt
-            tee = te + dt
+            times = np.asarray([float(ttt) for ttt in times])
             whr = np.where(
-                    np.logical_and(tss <= times, times < tee))
+                    np.logical_and(ts <= times, times < te))
 
             n_spikes = len(whr[0])
             if n_spikes > 0:
                 if k == 'input':
+                    nid = int(nid)
+                    input_spike_count += 1
                     n_bits = 6
-                    row, col = nid >> n_bits, np.bitwise_and(nid, ((1 << n_bits) - 1))
-#                     row, col = nid // w, nid % w
-                    print(f"{nid}, {np.binary_repr(nid, 32)}, {row}, {col}")
+                    mask = (1 << n_bits) - 1
+                    col, row = nid >> n_bits, np.bitwise_and(nid, mask)
+                    row, col = nid // w, nid % w
+                    print(f"{nid}, {np.binary_repr(nid, 13)}, {row}, {col}")
                 else:
                     row, col = nid // w, nid % w
                 out_imgs[k][row, col] = 255#min(n_spikes * 21, 255)
+
+        if k == 'input':
+            print(input_spike_count)
 
         image_fname = f"./spinn_out/{name}_{k}_sim_output_{tidx:010d}.png"
         cv2.imwrite(image_fname, out_imgs[k])
