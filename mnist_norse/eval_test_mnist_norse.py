@@ -1,19 +1,15 @@
 import numpy as np
+import pytorch_lightning as pl
 import torch
 import torchvision
-from mnist_norse import LIFConvNet
-import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
-import pytorch_lightning as pl
-from pytorch_lightning.callbacks import ModelCheckpoint
-from bifrost.extract.torch.parameter_buffers import set_parameter_buffers
+
+from mnist_norse import LIFConvNet
 
 
 def retry_jittered_backoff(f, num_retries=5):
     # Based on:
     # https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
-    import time
-    import random
     cap = 1.0                  # max sleep time is 1s
     base = 0.01                # initial sleep time is 10ms
     sleep = base               # initial sleep time is 10ms
@@ -110,26 +106,23 @@ model = LIFConvNet(
     model=act_model,
 ).to(device)
 
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-checkpoint_callback = ModelCheckpoint(
-    monitor='val_loss',
-    dirpath='checkpoints',
-    filename='sample-mnist-{epoch:02d}-{val_loss:.2f}'
-)
-# pl.Trainer.from_argparse_args()
+filename = "/home/chanokin/sussex/spike_conv_nets/spike_conv_nets/mnist_norse/mnist-final-50-poisson-volt_out.pt"
+checkpoint = torch.load(filename,
+                        map_location=torch.device('cpu'))
+model.load_state_dict(checkpoint['state_dict'], strict=False)
+
 trainer = pl.Trainer(gpus=gpus,
                      max_epochs=epochs,
                     #  callbacks=[checkpoint_callback],
                     #  fast_dev_run=True
                     )
-trainer.fit(model, train_loader)
 
 trainer.test(model, test_loader)
 
-set_parameter_buffers(model)
-model_path = "mnist-final.pt"
-torch.save(
-    dict(state_dict=model.state_dict(keep_vars=True),
-         optimizer=optimizer, ),
-    model_path,
-)
+# set_parameter_buffers(model)
+# model_path = "mnist-final.pt"
+# torch.save(
+#     dict(state_dict=model.state_dict(keep_vars=True),
+#          optimizer=optimizer, ),
+#     model_path,
+# )

@@ -151,6 +151,27 @@ class LIFConvNet(pl.LightningModule):
         # log_p_y = torch.nn.functional.log_softmax(spike_sum, dim=1)
         # return log_p_y
 
+    def test_step(self, batch, batch_idx):
+        x, y = batch
+        out = self(x)
+        correct = out.argmax(dim=1).eq(y).sum().item()
+        total = len(y)
+        acc = float(correct) / total
+
+        batch_dict = {
+            "correct": correct,
+            "total": total,
+            "accuracy": acc
+        }
+
+        return batch_dict
+
+    def test_epoch_end(self, outputs):
+        all_accuracies = [d["accuracy"] for d in outputs]
+        print(all_accuracies)
+        avg_acc = torch.mean(torch.tensor(all_accuracies))
+        print(f"accuracy {avg_acc}")
+
     def training_step(self, batch, batch_idx):
         x, y = batch
         out = self(x)
@@ -190,7 +211,6 @@ class LIFConvNet(pl.LightningModule):
 
     def training_epoch_end(self, outputs):
         print(outputs[-1])
-
 
     def configure_optimizers(self):
         if self.optimizer == "adam":
